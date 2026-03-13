@@ -11,6 +11,15 @@
   <main>
     <h1>Ausgaben erfassen</h1>
 
+    <!-- Monats-Export-Banner (standardmäßig versteckt) -->
+    <div id="monthBanner" class="banner" hidden>
+      <p id="bannerText"></p>
+      <div class="banner-buttons">
+        <button id="bannerExportBtn">📧 Exportieren &amp; Mail öffnen</button>
+        <button id="bannerSkipBtn" class="btn-secondary">Überspringen</button>
+      </div>
+    </div>
+
     <div class="form">
       <label>Preis
         <input id="price" type="number" step="0.01" inputmode="decimal" placeholder="0.00" />

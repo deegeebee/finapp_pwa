@@ -8,6 +8,13 @@ input,select{width:100%;padding:8px;margin-top:4px;border:1px solid #ddd;border-
 .buttons{display:flex;gap:8px;flex-wrap:wrap}
 button{padding:8px 12px;border:0;border-radius:6px;cursor:pointer;background:#2563eb;color:white}
 button[title]{background:#ef4444}
+
+/* Monats-Banner */
+.banner{background:#fefce8;border:1px solid #fbbf24;border-radius:8px;padding:12px;margin-bottom:12px}
+.banner p{margin:0 0 8px;font-size:0.95rem}
+.banner-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.btn-secondary{background:#e5e7eb;color:#111}
+
 #list{list-style:none;padding:0;margin:12px 0}
 #list li{padding:8px;background:#fff;border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid #eee}
 .small{font-size:0.9rem;color:#555}
