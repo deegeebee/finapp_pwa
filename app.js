@@ -4,7 +4,7 @@ const KEY_EXPORTED = 'exported_months';
 const KEY_THEME    = 'theme';
 
 // ── Version (bitte bei jedem Deploy aktualisieren) ─────────────────────────
-const APP_VERSION = 'branch: v7_export';
+const APP_VERSION = 'branch: v8_date_only';
 
 // ── Theme ──────────────────────────────────────────────────────────────────
 
@@ -170,7 +170,7 @@ function renderList() {
   entries.slice().reverse().forEach(e => {
     const li    = document.createElement('li');
     const left  = document.createElement('div');
-    left.innerHTML = `<strong>${e.category}</strong><div class="small">${new Date(e.date).toLocaleString()}</div>`;
+    left.innerHTML = `<strong>${e.category}</strong><div class="small">${new Date(e.date).toLocaleDateString('de-DE')}</div>`;
     const right = document.createElement('div');
     right.innerHTML = `<div>${Number(e.price).toFixed(2)} €</div>`;
     li.appendChild(left);
@@ -191,7 +191,7 @@ saveBtn.addEventListener('click', () => {
   const entries = loadEntries();
   entries.push({
     id: Date.now(),
-    date: new Date().toISOString(),
+    date: toDateStr(new Date()),
     price: Number(price),
     category: String(category)
   });
