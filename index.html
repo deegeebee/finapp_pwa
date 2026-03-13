@@ -25,13 +25,13 @@
         <input id="price" type="number" step="0.01" inputmode="decimal" placeholder="0.00" />
       </label>
 
-      <label>Kategorie
-        <select id="category">
-          <option value="Nötig">Nötig</option>
-          <option value="Zusatz">Zusatz</option>
-          <option value="Fun">Fun</option>
-        </select>
-      </label>
+      <div class="cat-label">Kategorie</div>
+      <div class="cat-buttons" id="categoryButtons">
+        <button type="button" class="cat-btn cat-rot active" data-value="Basis">Basis</button>
+        <button type="button" class="cat-btn cat-gelb" data-value="Extra">Extra</button>
+        <button type="button" class="cat-btn cat-gruen" data-value="Luxus">Luxus</button>
+      </div>
+      <input type="hidden" id="category" value="Basis" />
 
       <div class="buttons">
         <button id="saveBtn">Speichern</button>

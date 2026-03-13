@@ -15,6 +15,23 @@ button[title]{background:#ef4444}
 .banner-buttons{display:flex;gap:8px;flex-wrap:wrap}
 .btn-secondary{background:#e5e7eb;color:#111}
 
+/* Kategorie-Buttons */
+.cat-label{font-size:0.9rem;margin-bottom:4px}
+.cat-buttons{display:flex;gap:10px}
+.cat-btn{
+  flex:1;padding:16px 8px;font-size:1rem;font-weight:500;
+  border-radius:10px;cursor:pointer;
+  background:transparent;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  transition:background 0.15s;
+}
+.cat-rot { border:3px solid #c0392b; color:#c0392b; }
+.cat-gelb{ border:3px solid #c49a00; color:#c49a00; }
+.cat-gruen{ border:3px solid #1e8449; color:#1e8449; }
+.cat-rot.active  { background:rgba(192,57,43,0.10); }
+.cat-gelb.active { background:rgba(196,154,0,0.10); }
+.cat-gruen.active{ background:rgba(30,132,73,0.10); }
+
 #list{list-style:none;padding:0;margin:12px 0}
 #list li{padding:8px;background:#fff;border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid #eee}
 .small{font-size:0.9rem;color:#555}

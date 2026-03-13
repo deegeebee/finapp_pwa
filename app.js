@@ -10,6 +10,16 @@ const clearBtn  = document.getElementById('clearBtn');
 const listEl    = document.getElementById('list');
 const bannerEl  = document.getElementById('monthBanner');
 
+// ── Kategorie-Buttons ──────────────────────────────────────────────────────
+
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    catEl.value = btn.dataset.value;
+  });
+});
+
 // ── localStorage-Helfer ────────────────────────────────────────────────────
 
 function loadEntries() {
@@ -158,7 +168,9 @@ saveBtn.addEventListener('click', () => {
   });
   saveEntries(entries);
   priceEl.value = '';
-  catEl.selectedIndex = 0;
+  // Kategorie zurücksetzen auf ersten Button
+  document.querySelectorAll('.cat-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  catEl.value = 'Basis';
   renderList();
 });
 
