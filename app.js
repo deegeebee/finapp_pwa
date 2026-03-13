@@ -1,6 +1,35 @@
 // Persistenz: localStorage
 const KEY          = 'expenses_v1';
 const KEY_EXPORTED = 'exported_months';
+const KEY_THEME    = 'theme';
+
+// ── Version (bitte bei jedem Deploy aktualisieren) ─────────────────────────
+const APP_VERSION = 'branch: dark_toggle_footer';
+
+// ── Theme ──────────────────────────────────────────────────────────────────
+
+function applyTheme(theme) {
+  document.body.classList.remove('dark', 'light');
+  document.body.classList.add(theme);
+  document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem(KEY_THEME, theme);
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(KEY_THEME);
+  if (saved) {
+    applyTheme(saved);
+  } else {
+    // Kein gespeicherter Wert → System-Präferenz als Startzustand
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark ? 'dark' : 'light');
+  }
+}
+
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const isDark = document.body.classList.contains('dark');
+  applyTheme(isDark ? 'light' : 'dark');
+});
 
 const priceEl   = document.getElementById('price');
 const catEl     = document.getElementById('category');
@@ -196,6 +225,8 @@ clearBtn.addEventListener('click', () => {
 
 renderList();
 pruefeMonatsExport();
+initTheme();
+document.getElementById('versionLabel').textContent = APP_VERSION;
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('service-worker.js').catch(() => { /* ignore */ });
