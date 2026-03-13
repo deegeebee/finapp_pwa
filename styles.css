@@ -44,6 +44,24 @@ button[title]{background:#ef4444}
   cursor:pointer;color:inherit;
 }
 
+/* Export-Dialog */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.dialog{background:#fff;border-radius:12px;padding:20px;width:100%;max-width:400px;display:grid;gap:12px}
+.dialog h2{margin:0;font-size:1.1rem}
+.dialog-label{display:block;font-size:0.9rem}
+.dialog-label select,
+.dialog-label input[type="date"],
+.dialog-label input[type="text"]{width:100%;padding:8px;margin-top:4px;border:1px solid #ddd;border-radius:6px;font-size:0.95rem;box-sizing:border-box}
+.dialog-buttons{display:flex;gap:8px}
+body.dark .dialog{background:#1e1e1e}
+body.dark .dialog-label select,
+body.dark .dialog-label input{background:#2a2a2a;color:#f0f0f0;border-color:#444}
+@media (prefers-color-scheme:dark){
+  body:not(.light) .dialog{background:#1e1e1e}
+  body:not(.light) .dialog-label select,
+  body:not(.light) .dialog-label input{background:#2a2a2a;color:#f0f0f0;border-color:#444}
+}
+
 /* Version-Footer */
 .version-footer{margin-top:24px;text-align:center;font-size:0.8rem;color:#aaa}
 

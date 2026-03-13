@@ -51,6 +51,37 @@
     </footer>
   </main>
 
+  <!-- Export-Dialog -->
+  <div id="exportOverlay" class="overlay" hidden>
+    <div class="dialog">
+      <h2>Export (CSV)</h2>
+      <label class="dialog-label">Zeitraum
+        <select id="exportRange">
+          <option value="thisMonth">Aktueller Monat</option>
+          <option value="lastMonth">Letzter Monat</option>
+          <option value="custom">Benutzerdefiniert</option>
+          <option value="all">Alle Daten</option>
+        </select>
+      </label>
+      <div id="customDates" hidden>
+        <label class="dialog-label">Von
+          <input type="date" id="exportFrom" />
+        </label>
+        <label class="dialog-label">Bis
+          <input type="date" id="exportTo" />
+        </label>
+      </div>
+      <label class="dialog-label">Dateiname
+        <input type="text" id="exportFilename" />
+      </label>
+      <p id="exportCount" class="small"></p>
+      <div class="dialog-buttons">
+        <button id="exportConfirmBtn">Exportieren</button>
+        <button id="exportCancelBtn" class="btn-secondary">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>

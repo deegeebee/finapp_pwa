@@ -4,7 +4,7 @@ const KEY_EXPORTED = 'exported_months';
 const KEY_THEME    = 'theme';
 
 // ── Version (bitte bei jedem Deploy aktualisieren) ─────────────────────────
-const APP_VERSION = 'branch: dark_toggle_footer';
+const APP_VERSION = 'branch: Export';
 
 // ── Theme ──────────────────────────────────────────────────────────────────
 
@@ -203,16 +203,110 @@ saveBtn.addEventListener('click', () => {
   renderList();
 });
 
+// ── Export-Dialog ──────────────────────────────────────────────────────────
+
+const exportOverlay    = document.getElementById('exportOverlay');
+const exportRangeEl    = document.getElementById('exportRange');
+const customDatesEl    = document.getElementById('customDates');
+const exportFromEl     = document.getElementById('exportFrom');
+const exportToEl       = document.getElementById('exportTo');
+const exportFilenameEl = document.getElementById('exportFilename');
+const exportCountEl    = document.getElementById('exportCount');
+
+/** Returns YYYY-MM-DD string for a Date */
+function toDateStr(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+/** Computes from/to Date boundaries for the selected range */
+function getRangeBounds(range) {
+  const now = new Date();
+  let from, to;
+  if (range === 'thisMonth') {
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+    to   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  } else if (range === 'lastMonth') {
+    from = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    to   = new Date(now.getFullYear(), now.getMonth(), 0);
+  } else if (range === 'custom') {
+    from = exportFromEl.value ? new Date(exportFromEl.value) : null;
+    to   = exportToEl.value   ? new Date(exportToEl.value)   : null;
+  } else {
+    from = null; to = null; // all
+  }
+  return { from, to };
+}
+
+/** Pre-fills filename based on selected range */
+function updateFilename() {
+  const range = exportRangeEl.value;
+  const now   = new Date();
+  let name;
+  if (range === 'thisMonth') {
+    name = `ausgaben-${toMonthKey(now)}`;
+  } else if (range === 'lastMonth') {
+    const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    name = `ausgaben-${toMonthKey(lm)}`;
+  } else if (range === 'custom') {
+    const f = exportFromEl.value || 'von';
+    const t = exportToEl.value   || 'bis';
+    name = `ausgaben-${f}_${t}`;
+  } else {
+    name = `ausgaben-gesamt`;
+  }
+  exportFilenameEl.value = name + '.csv';
+}
+
+/** Filters entries and updates the count hint */
+function updateExportPreview() {
+  const { from, to } = getRangeBounds(exportRangeEl.value);
+  const all = loadEntries();
+  const filtered = all.filter(e => {
+    const d = new Date(e.date);
+    if (from && d < from) return false;
+    if (to   && d > new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59)) return false;
+    return true;
+  });
+  exportCountEl.textContent = `${filtered.length} Eintrag/Einträge im gewählten Zeitraum.`;
+  return filtered;
+}
+
 exportBtn.addEventListener('click', () => {
-  const entries = loadEntries();
-  if (entries.length === 0) { alert('Keine Einträge zum Exportieren.'); return; }
-  const csv  = buildCSV(entries);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href = url; a.download = 'expenses.csv';
+  if (loadEntries().length === 0) { alert('Keine Einträge zum Exportieren.'); return; }
+  exportRangeEl.value  = 'thisMonth';
+  customDatesEl.hidden = true;
+  exportFromEl.value   = '';
+  exportToEl.value     = '';
+  updateFilename();
+  updateExportPreview();
+  exportOverlay.hidden = false;
+});
+
+exportRangeEl.addEventListener('change', () => {
+  customDatesEl.hidden = exportRangeEl.value !== 'custom';
+  updateFilename();
+  updateExportPreview();
+});
+
+exportFromEl.addEventListener('change', () => { updateFilename(); updateExportPreview(); });
+exportToEl.addEventListener('change',   () => { updateFilename(); updateExportPreview(); });
+
+document.getElementById('exportCancelBtn').addEventListener('click', () => {
+  exportOverlay.hidden = true;
+});
+
+document.getElementById('exportConfirmBtn').addEventListener('click', () => {
+  const filtered = updateExportPreview();
+  if (filtered.length === 0) { alert('Keine Einträge im gewählten Zeitraum.'); return; }
+  const csv      = buildCSV(filtered);
+  const blob     = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url      = URL.createObjectURL(blob);
+  const filename = exportFilenameEl.value || 'ausgaben.csv';
+  const a        = document.createElement('a');
+  a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
+  exportOverlay.hidden = true;
 });
 
 clearBtn.addEventListener('click', () => {
