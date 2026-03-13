@@ -4,7 +4,7 @@ const KEY_EXPORTED = 'exported_months';
 const KEY_THEME    = 'theme';
 
 // ── Version (bitte bei jedem Deploy aktualisieren) ─────────────────────────
-const APP_VERSION = 'branch: Export';
+const APP_VERSION = 'branch: v7_export';
 
 // ── Theme ──────────────────────────────────────────────────────────────────
 
@@ -279,7 +279,7 @@ exportBtn.addEventListener('click', () => {
   exportToEl.value     = '';
   updateFilename();
   updateExportPreview();
-  exportOverlay.hidden = false;
+  exportOverlay.classList.remove("hidden");
 });
 
 exportRangeEl.addEventListener('change', () => {
@@ -292,7 +292,7 @@ exportFromEl.addEventListener('change', () => { updateFilename(); updateExportPr
 exportToEl.addEventListener('change',   () => { updateFilename(); updateExportPreview(); });
 
 document.getElementById('exportCancelBtn').addEventListener('click', () => {
-  exportOverlay.hidden = true;
+  exportOverlay.classList.add("hidden");
 });
 
 document.getElementById('exportConfirmBtn').addEventListener('click', () => {
@@ -306,7 +306,7 @@ document.getElementById('exportConfirmBtn').addEventListener('click', () => {
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
-  exportOverlay.hidden = true;
+  exportOverlay.classList.add("hidden");
 });
 
 clearBtn.addEventListener('click', () => {

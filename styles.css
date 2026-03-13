@@ -46,6 +46,7 @@ button[title]{background:#ef4444}
 
 /* Export-Dialog */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px}
+.overlay.hidden{display:none}
 .dialog{background:#fff;border-radius:12px;padding:20px;width:100%;max-width:400px;display:grid;gap:12px}
 .dialog h2{margin:0;font-size:1.1rem}
 .dialog-label{display:block;font-size:0.9rem}
