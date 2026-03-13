@@ -1,4 +1,4 @@
-const CACHE = 'pwacache-v2';
+const CACHE = 'pwacache-v3';
 const ASSETS = [
   '.', 'index.html', 'styles.css', 'app.js',
   'manifest.json', 'icon-192.png', 'icon-512.png'
