@@ -2,9 +2,65 @@
 const KEY          = 'expenses_v1';
 const KEY_EXPORTED = 'exported_months';
 const KEY_THEME    = 'theme';
+const KEY_BUDGET   = 'budget_monthly';
 
-// ── Version (bitte bei jedem Deploy aktualisieren) ─────────────────────────
-const APP_VERSION = 'branch: v8_date_only';
+// ── Version (bitte bei jedem Deploy auf main aktualisieren) ────────────────
+const APP_VERSION = 'built: 2026-04-28T09:23:00Z';
+
+// ── Hilfsfunktionen ────────────────────────────────────────────────────────
+
+/** Returns YYYY-MM-DD string using LOCAL time (avoids UTC off-by-one on mobile) */
+function toDateStr(date) {
+  const y  = date.getFullYear();
+  const m  = String(date.getMonth() + 1).padStart(2, '0');
+  const d  = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/** Gibt "YYYY-MM" für ein Date-Objekt zurück, z.B. "2025-03" */
+function toMonthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/** Lesbarer Monatsname, z.B. "März 2025" */
+function monthLabel(monthKey) {
+  const [y, m] = monthKey.split('-');
+  return new Date(Number(y), Number(m) - 1, 1)
+    .toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+}
+
+/** Escapes a string for safe insertion into innerHTML */
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── localStorage-Helfer ────────────────────────────────────────────────────
+
+function loadEntries() {
+  try { return JSON.parse(localStorage.getItem(KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveEntries(arr) {
+  localStorage.setItem(KEY, JSON.stringify(arr));
+}
+
+function loadBudget() {
+  const v = parseFloat(localStorage.getItem(KEY_BUDGET));
+  return Number.isFinite(v) && v > 0 ? v : null;
+}
+
+function saveBudget(val) {
+  if (val === null) {
+    localStorage.removeItem(KEY_BUDGET);
+  } else {
+    localStorage.setItem(KEY_BUDGET, String(val));
+  }
+}
 
 // ── Theme ──────────────────────────────────────────────────────────────────
 
@@ -20,7 +76,6 @@ function initTheme() {
   if (saved) {
     applyTheme(saved);
   } else {
-    // Kein gespeicherter Wert → System-Präferenz als Startzustand
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     applyTheme(prefersDark ? 'dark' : 'light');
   }
@@ -31,13 +86,91 @@ document.getElementById('themeBtn').addEventListener('click', () => {
   applyTheme(isDark ? 'light' : 'dark');
 });
 
+// ── DOM-Referenzen ─────────────────────────────────────────────────────────
+
 const priceEl   = document.getElementById('price');
 const catEl     = document.getElementById('category');
+const remarksEl = document.getElementById('remarks');
 const saveBtn   = document.getElementById('saveBtn');
 const exportBtn = document.getElementById('exportBtn');
 const clearBtn  = document.getElementById('clearBtn');
 const listEl    = document.getElementById('list');
 const bannerEl  = document.getElementById('monthBanner');
+
+// ── Burger-Menü / Einstellungen ────────────────────────────────────────────
+
+const burgerBtn      = document.getElementById('burgerBtn');
+const settingsPanel  = document.getElementById('settingsPanel');
+const budgetInput    = document.getElementById('budgetInput');
+const budgetSaveBtn  = document.getElementById('budgetSaveBtn');
+const budgetClearBtn = document.getElementById('budgetClearBtn');
+
+burgerBtn.addEventListener('click', () => {
+  const isHidden = settingsPanel.hidden;
+  settingsPanel.hidden = !isHidden;
+  if (!isHidden) return; // closing — nothing more to do
+  // Opening: pre-fill with stored budget
+  const budget = loadBudget();
+  budgetInput.value = budget !== null ? budget.toFixed(2) : '';
+});
+
+budgetSaveBtn.addEventListener('click', () => {
+  const val = parseFloat(budgetInput.value);
+  if (!Number.isFinite(val) || val <= 0) {
+    alert('Bitte ein gültiges Budget eingeben (größer als 0).');
+    return;
+  }
+  saveBudget(val);
+  settingsPanel.hidden = true;
+  renderMonthSummary();
+});
+
+budgetClearBtn.addEventListener('click', () => {
+  saveBudget(null);
+  budgetInput.value = '';
+  settingsPanel.hidden = true;
+  renderMonthSummary();
+});
+
+// ── Monatsübersicht & Budget-Balken ────────────────────────────────────────
+
+function renderMonthSummary() {
+  const now      = new Date();
+  const monthKey = toMonthKey(now);
+  const entries  = loadEntries().filter(e => toMonthKey(new Date(e.date)) === monthKey);
+  const sum      = entries.reduce((s, e) => s + Number(e.price), 0);
+  const budget   = loadBudget();
+
+  const labelEl  = document.getElementById('monthSummaryLabel');
+  const amountEl = document.getElementById('monthSummaryAmount');
+  const barWrap  = document.getElementById('budgetBarWrap');
+  const barFill  = document.getElementById('budgetBarFill');
+
+  labelEl.textContent = monthLabel(monthKey);
+
+  if (budget !== null) {
+    amountEl.textContent = `${sum.toFixed(2)} € / ${budget.toFixed(2)} €`;
+    const pct = Math.min((sum / budget) * 100, 100);
+    barFill.style.width = `${pct.toFixed(1)}%`;
+    barFill.classList.remove('near', 'over');
+    if (sum > budget) {
+      barFill.classList.add('over');
+      amountEl.classList.add('over-budget');
+      amountEl.classList.remove('near-budget');
+    } else if (pct >= 80) {
+      barFill.classList.add('near');
+      amountEl.classList.add('near-budget');
+      amountEl.classList.remove('over-budget');
+    } else {
+      amountEl.classList.remove('over-budget', 'near-budget');
+    }
+    barWrap.hidden = false;
+  } else {
+    amountEl.textContent = `${sum.toFixed(2)} €`;
+    amountEl.classList.remove('over-budget', 'near-budget');
+    barWrap.hidden = true;
+  }
+}
 
 // ── Kategorie-Buttons ──────────────────────────────────────────────────────
 
@@ -49,30 +182,7 @@ document.querySelectorAll('.cat-btn').forEach(btn => {
   });
 });
 
-// ── localStorage-Helfer ────────────────────────────────────────────────────
-
-function loadEntries() {
-  try { return JSON.parse(localStorage.getItem(KEY) || '[]'); }
-  catch { return []; }
-}
-
-function saveEntries(arr) {
-  localStorage.setItem(KEY, JSON.stringify(arr));
-}
-
 // ── Monatlicher Export-Reminder ────────────────────────────────────────────
-
-/** Gibt "YYYY-MM" für ein Date-Objekt zurück, z.B. "2025-03" */
-function toMonthKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-}
-
-/** Lesbarer Monatsname, z.B. "März 2025" */
-function monthLabel(monthKey) {
-  const [y, m] = monthKey.split('-');
-  return new Date(Number(y), Number(m) - 1, 1)
-    .toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
-}
 
 function wurdeExportiert(monthKey) {
   const liste = JSON.parse(localStorage.getItem(KEY_EXPORTED) || '[]');
@@ -89,12 +199,15 @@ function markiereAlsExportiert(monthKey) {
 
 /** Erzeugt CSV-String für eine Liste von Einträgen */
 function buildCSV(entries) {
-  const lines = ['Datum,Preis,Kategorie'];
+  const lines = ['Datum,Preis,Kategorie,Anmerkung'];
   entries.forEach(e => {
     const cat = String(e.category).includes(',')
       ? `"${String(e.category).replace(/"/g, '""')}"`
       : e.category;
-    lines.push(`${e.date},${Number(e.price).toFixed(2)},${cat}`);
+    const rem = String(e.remarks || '').includes(',')
+      ? `"${String(e.remarks || '').replace(/"/g, '""')}"`
+      : (e.remarks || '');
+    lines.push(`${e.date},${Number(e.price).toFixed(2)},${cat},${rem}`);
   });
   return lines.join('\n');
 }
@@ -106,7 +219,6 @@ function exportAndMail(monthKey, entries) {
   const url      = URL.createObjectURL(blob);
   const filename = `ausgaben-${monthKey}.csv`;
 
-  // 1. CSV herunterladen
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
@@ -115,7 +227,6 @@ function exportAndMail(monthKey, entries) {
   a.remove();
   URL.revokeObjectURL(url);
 
-  // 2. Mail-Client öffnen (Datei liegt im Download-Ordner)
   const subject = encodeURIComponent(`Ausgaben ${monthLabel(monthKey)}`);
   const body    = encodeURIComponent(
     `Hallo,\n\nim Anhang findest du die Ausgaben für ${monthLabel(monthKey)}.\n` +
@@ -123,24 +234,21 @@ function exportAndMail(monthKey, entries) {
   );
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
 
-  // 3. Als exportiert merken & Banner ausblenden
   markiereAlsExportiert(monthKey);
   bannerEl.hidden = true;
 }
 
 /** Prüft beim App-Start, ob ein Monatsbanner angezeigt werden soll */
 function pruefeMonatsExport() {
-  const heute        = new Date();
-  const vormonat     = new Date(heute.getFullYear(), heute.getMonth() - 1, 1);
-  const vormonatKey  = toMonthKey(vormonat);
+  const heute       = new Date();
+  const vormonat    = new Date(heute.getFullYear(), heute.getMonth() - 1, 1);
+  const vormonatKey = toMonthKey(vormonat);
 
-  // Einträge des Vormonats filtern
   const eintraege = loadEntries().filter(e => toMonthKey(new Date(e.date)) === vormonatKey);
 
-  if (eintraege.length === 0)       return; // keine Daten → kein Banner
-  if (wurdeExportiert(vormonatKey)) return; // schon exportiert → kein Banner
+  if (eintraege.length === 0)       return;
+  if (wurdeExportiert(vormonatKey)) return;
 
-  // Banner befüllen und anzeigen
   const label = monthLabel(vormonatKey);
   const summe = eintraege.reduce((s, e) => s + Number(e.price), 0).toFixed(2);
 
@@ -170,20 +278,25 @@ function renderList() {
   entries.slice().reverse().forEach(e => {
     const li    = document.createElement('li');
     const left  = document.createElement('div');
-    left.innerHTML = `<strong>${e.category}</strong><div class="small">${new Date(e.date).toLocaleDateString('de-DE')}</div>`;
+    // escapeHtml prevents XSS from user-entered category or remarks text
+    const cat     = escapeHtml(e.category);
+    const date    = new Date(e.date).toLocaleDateString('de-DE');
+    const remarks = e.remarks ? `<div class="entry-remark">${escapeHtml(e.remarks)}</div>` : '';
+    left.innerHTML = `<strong>${cat}</strong><div class="small">${date}</div>${remarks}`;
     const right = document.createElement('div');
-    right.innerHTML = `<div>${Number(e.price).toFixed(2)} €</div>`;
+    right.textContent = `${Number(e.price).toFixed(2)} €`;
     li.appendChild(left);
     li.appendChild(right);
     listEl.appendChild(li);
   });
 }
 
-// ── Event-Listener ─────────────────────────────────────────────────────────
+// ── Speichern ──────────────────────────────────────────────────────────────
 
 saveBtn.addEventListener('click', () => {
   const price    = parseFloat(priceEl.value);
   const category = catEl.value || 'Sonstiges';
+  const remarks  = remarksEl.value.trim();
   if (!Number.isFinite(price) || price === 0) {
     alert('Bitte einen gültigen Preis eingeben.');
     return;
@@ -193,14 +306,16 @@ saveBtn.addEventListener('click', () => {
     id: Date.now(),
     date: toDateStr(new Date()),
     price: Number(price),
-    category: String(category)
+    category: String(category),
+    remarks: remarks
   });
   saveEntries(entries);
-  priceEl.value = '';
-  // Kategorie zurücksetzen auf ersten Button
+  priceEl.value   = '';
+  remarksEl.value = '';
   document.querySelectorAll('.cat-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
   catEl.value = 'Basis';
   renderList();
+  renderMonthSummary();
 });
 
 // ── Export-Dialog ──────────────────────────────────────────────────────────
@@ -213,12 +328,6 @@ const exportToEl       = document.getElementById('exportTo');
 const exportFilenameEl = document.getElementById('exportFilename');
 const exportCountEl    = document.getElementById('exportCount');
 
-/** Returns YYYY-MM-DD string for a Date */
-function toDateStr(date) {
-  return date.toISOString().slice(0, 10);
-}
-
-/** Computes from/to Date boundaries for the selected range */
 function getRangeBounds(range) {
   const now = new Date();
   let from, to;
@@ -232,12 +341,11 @@ function getRangeBounds(range) {
     from = exportFromEl.value ? new Date(exportFromEl.value) : null;
     to   = exportToEl.value   ? new Date(exportToEl.value)   : null;
   } else {
-    from = null; to = null; // all
+    from = null; to = null;
   }
   return { from, to };
 }
 
-/** Pre-fills filename based on selected range */
 function updateFilename() {
   const range = exportRangeEl.value;
   const now   = new Date();
@@ -257,7 +365,6 @@ function updateFilename() {
   exportFilenameEl.value = name + '.csv';
 }
 
-/** Filters entries and updates the count hint */
 function updateExportPreview() {
   const { from, to } = getRangeBounds(exportRangeEl.value);
   const all = loadEntries();
@@ -279,7 +386,7 @@ exportBtn.addEventListener('click', () => {
   exportToEl.value     = '';
   updateFilename();
   updateExportPreview();
-  exportOverlay.classList.remove("hidden");
+  exportOverlay.classList.remove('hidden');
 });
 
 exportRangeEl.addEventListener('change', () => {
@@ -292,7 +399,7 @@ exportFromEl.addEventListener('change', () => { updateFilename(); updateExportPr
 exportToEl.addEventListener('change',   () => { updateFilename(); updateExportPreview(); });
 
 document.getElementById('exportCancelBtn').addEventListener('click', () => {
-  exportOverlay.classList.add("hidden");
+  exportOverlay.classList.add('hidden');
 });
 
 document.getElementById('exportConfirmBtn').addEventListener('click', () => {
@@ -306,22 +413,33 @@ document.getElementById('exportConfirmBtn').addEventListener('click', () => {
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
-  exportOverlay.classList.add("hidden");
+  exportOverlay.classList.add('hidden');
 });
+
+// ── Löschen ────────────────────────────────────────────────────────────────
 
 clearBtn.addEventListener('click', () => {
   if (!confirm('Alle Einträge unwiderruflich löschen?')) return;
   localStorage.removeItem(KEY);
   renderList();
+  renderMonthSummary();
 });
 
 // ── Start ──────────────────────────────────────────────────────────────────
 
 renderList();
+renderMonthSummary();
 pruefeMonatsExport();
 initTheme();
 document.getElementById('versionLabel').textContent = APP_VERSION;
 
+// ── Service Worker ─────────────────────────────────────────────────────────
+
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js').catch(() => { /* ignore */ });
+  navigator.serviceWorker.register('service-worker.js').then(reg => {
+    reg.update();
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  }).catch(() => {});
 }

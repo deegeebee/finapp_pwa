@@ -9,8 +9,25 @@
 </head>
 <body>
   <main>
-    <h1>Ausgaben erfassen</h1>
-    <button id="themeBtn" class="theme-btn" title="Theme umschalten">☀️</button>
+    <div class="topbar">
+      <div class="topbar-left">
+        <button id="burgerBtn" class="icon-btn" title="Einstellungen">&#9776;</button>
+        <button id="themeBtn" class="icon-btn" title="Theme umschalten">☀️</button>
+      </div>
+      <h1>Ausgaben erfassen</h1>
+    </div>
+
+    <!-- Einstellungen-Panel (standardmäßig versteckt) -->
+    <div id="settingsPanel" class="settings-panel" hidden>
+      <h2>Einstellungen</h2>
+      <label class="dialog-label">Monatsbudget (€)
+        <input type="number" id="budgetInput" step="0.01" inputmode="decimal" placeholder="z.B. 200.00" />
+      </label>
+      <div class="buttons" style="margin-top:8px">
+        <button id="budgetSaveBtn">Speichern</button>
+        <button id="budgetClearBtn" class="btn-secondary">Budget entfernen</button>
+      </div>
+    </div>
 
     <!-- Monats-Export-Banner (standardmäßig versteckt) -->
     <div id="monthBanner" class="banner" hidden>
@@ -18,6 +35,19 @@
       <div class="banner-buttons">
         <button id="bannerExportBtn">📧 Exportieren &amp; Mail öffnen</button>
         <button id="bannerSkipBtn" class="btn-secondary">Überspringen</button>
+      </div>
+    </div>
+
+    <!-- Monatsübersicht / Budget-Fortschrittsbalken -->
+    <div id="monthSummary" class="month-summary">
+      <div class="month-summary-row">
+        <span id="monthSummaryLabel" class="month-summary-month"></span>
+        <span id="monthSummaryAmount" class="month-summary-amount"></span>
+      </div>
+      <div id="budgetBarWrap" class="budget-bar-wrap" hidden>
+        <div class="budget-bar-bg">
+          <div id="budgetBarFill" class="budget-bar-fill"></div>
+        </div>
       </div>
     </div>
 
@@ -34,10 +64,13 @@
       </div>
       <input type="hidden" id="category" value="Basis" />
 
+      <div class="cat-label">Anmerkung <span class="optional">(optional)</span></div>
+      <textarea id="remarks" rows="2" placeholder="z.B. Supermarkt – Wocheneinkauf"></textarea>
+
       <div class="buttons">
         <button id="saveBtn">Speichern</button>
         <button id="exportBtn">Export (CSV)</button>
-        <button id="clearBtn" title="Alle Einträge löschen">Löschen</button>
+        <button id="clearBtn" class="btn-danger">Löschen</button>
       </div>
     </div>
 
