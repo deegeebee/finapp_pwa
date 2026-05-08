@@ -8,112 +8,219 @@
   <link rel="manifest" href="manifest.json" />
 </head>
 <body>
-  <main>
-    <div class="topbar">
-      <div class="topbar-left">
-        <button id="burgerBtn" class="icon-btn" title="Einstellungen">&#9776;</button>
-        <button id="themeBtn" class="icon-btn" title="Theme umschalten">☀️</button>
-      </div>
-      <h1>Ausgaben erfassen</h1>
-    </div>
 
-    <!-- Einstellungen-Panel (standardmäßig versteckt) -->
-    <div id="settingsPanel" class="settings-panel" hidden>
-      <h2>Einstellungen</h2>
-      <label class="dialog-label">Monatsbudget (€)
-        <input type="number" id="budgetInput" step="0.01" inputmode="decimal" placeholder="z.B. 200.00" />
-      </label>
-      <div class="buttons" style="margin-top:8px">
-        <button id="budgetSaveBtn">Speichern</button>
-        <button id="budgetClearBtn" class="btn-secondary">Budget entfernen</button>
-      </div>
-    </div>
+  <!-- ── Top bar ── -->
+  <header class="topbar">
+    <span id="topbarTitle" class="topbar-title">Erfassen</span>
+    <button id="themeBtn" class="icon-btn" title="Theme umschalten">☀️</button>
+  </header>
 
-    <!-- Monats-Export-Banner (standardmäßig versteckt) -->
-    <div id="monthBanner" class="banner" hidden>
-      <p id="bannerText"></p>
-      <div class="banner-buttons">
-        <button id="bannerExportBtn">📧 Exportieren &amp; Mail öffnen</button>
-        <button id="bannerSkipBtn" class="btn-secondary">Überspringen</button>
-      </div>
-    </div>
+  <!-- ── Tab-Inhalte ── -->
+  <main id="mainContent">
 
-    <!-- Monatsübersicht / Budget-Fortschrittsbalken -->
-    <div id="monthSummary" class="month-summary">
-      <div class="month-summary-row">
-        <span id="monthSummaryLabel" class="month-summary-month"></span>
-        <span id="monthSummaryAmount" class="month-summary-amount"></span>
-      </div>
-      <div id="budgetBarWrap" class="budget-bar-wrap" hidden>
-        <div class="budget-bar-bg">
-          <div id="budgetBarFill" class="budget-bar-fill"></div>
+    <!-- TAB: Erfassen -->
+    <section id="tab-erfassen" class="tab-section">
+      <div id="monthBanner" class="banner" hidden>
+        <p id="bannerText"></p>
+        <div class="banner-buttons">
+          <button id="bannerExportBtn">📧 Exportieren &amp; Mail</button>
+          <button id="bannerSkipBtn" class="btn-secondary">Überspringen</button>
         </div>
       </div>
-    </div>
 
-    <div class="form">
-      <label>Preis
-        <input id="price" type="number" step="0.01" inputmode="decimal" placeholder="0.00" />
-      </label>
-
-      <div class="cat-label">Kategorie</div>
-      <div class="cat-buttons" id="categoryButtons">
-        <button type="button" class="cat-btn cat-rot active" data-value="Basis">Basis</button>
-        <button type="button" class="cat-btn cat-gelb" data-value="Extra">Extra</button>
-        <button type="button" class="cat-btn cat-gruen" data-value="Luxus">Luxus</button>
+      <div class="month-summary" id="monthSummaryCard">
+        <div class="summary-grid">
+          <div class="stat-card">
+            <div class="stat-label">Einnahmen</div>
+            <div class="stat-val green" id="sumIncome">— €</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ausgaben</div>
+            <div class="stat-val red" id="sumExpenses">0,00 €</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Fixkosten</div>
+            <div class="stat-val muted" id="sumFixed">0,00 €</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Ersparnis</div>
+            <div class="stat-val" id="sumSavings">— €</div>
+          </div>
+        </div>
+        <div id="budgetBarWrap" class="budget-bar-wrap" hidden>
+          <div class="budget-bar-row">
+            <span class="budget-bar-label" id="budgetBarLabel"></span>
+            <span class="budget-bar-pct" id="budgetBarPct"></span>
+          </div>
+          <div class="budget-bar-bg">
+            <div id="budgetBarFill" class="budget-bar-fill"></div>
+          </div>
+        </div>
       </div>
-      <input type="hidden" id="category" value="Basis" />
 
-      <div class="cat-label">Anmerkung <span class="optional">(optional)</span></div>
-      <textarea id="remarks" rows="2" placeholder="z.B. Supermarkt – Wocheneinkauf"></textarea>
+      <div class="form card">
+        <label>Preis (€)
+          <input id="price" type="number" step="0.01" inputmode="decimal" placeholder="0.00" />
+        </label>
 
-      <div class="buttons">
-        <button id="saveBtn">Speichern</button>
-        <button id="exportBtn">Export (CSV)</button>
-        <button id="clearBtn" class="btn-danger">Löschen</button>
+        <div class="cat-label">Kategorie</div>
+        <div class="cat-buttons" id="categoryButtons">
+          <button type="button" class="cat-btn cat-rot active" data-value="Basis">Basis</button>
+          <button type="button" class="cat-btn cat-gelb" data-value="Extra">Extra</button>
+          <button type="button" class="cat-btn cat-gruen" data-value="Luxus">Luxus</button>
+        </div>
+        <input type="hidden" id="category" value="Basis" />
+
+        <div class="cat-label">Anmerkung <span class="optional">(optional)</span></div>
+        <textarea id="remarks" rows="2" placeholder="z.B. Supermarkt – Wocheneinkauf"></textarea>
+
+        <button id="saveBtn" class="btn-primary btn-full">Speichern</button>
       </div>
-    </div>
-
-    <section>
-      <h2>Einträge</h2>
-      <ul id="list"></ul>
     </section>
 
-    <footer class="version-footer">
-      <span id="versionLabel"></span>
-    </footer>
+    <!-- TAB: Einträge -->
+    <section id="tab-eintraege" class="tab-section hidden">
+      <div class="month-nav">
+        <button id="prevMonthBtn" class="icon-btn">&#8249;</button>
+        <span id="listMonthLabel" class="month-nav-label"></span>
+        <button id="nextMonthBtn" class="icon-btn">&#8250;</button>
+      </div>
+      <ul id="list" class="entry-list"></ul>
+    </section>
+
+    <!-- TAB: Analyse -->
+    <section id="tab-analyse" class="tab-section hidden">
+      <div class="card" id="analyseCard">
+        <div class="month-nav">
+          <button id="prevMonthAnalyseBtn" class="icon-btn">&#8249;</button>
+          <span id="analyseMonthLabel" class="month-nav-label"></span>
+          <button id="nextMonthAnalyseBtn" class="icon-btn">&#8250;</button>
+        </div>
+
+        <div class="analyse-block">
+          <div class="analyse-row">
+            <span class="analyse-key">Einnahmen</span>
+            <span class="analyse-val green" id="aIncome">—</span>
+          </div>
+          <div class="analyse-row">
+            <span class="analyse-key">Fixkosten</span>
+            <span class="analyse-val" id="aFixed">—</span>
+          </div>
+          <div class="analyse-row">
+            <span class="analyse-key">Variable Ausgaben</span>
+            <span class="analyse-val" id="aVariable">—</span>
+          </div>
+          <div class="analyse-row analyse-total">
+            <span class="analyse-key">Gesamt Ausgaben</span>
+            <span class="analyse-val" id="aTotal">—</span>
+          </div>
+          <div class="analyse-row analyse-total">
+            <span class="analyse-key">Ersparnis</span>
+            <span class="analyse-val" id="aSavings">—</span>
+          </div>
+        </div>
+
+        <div class="analyse-cats" id="analyseCats"></div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3 class="card-title">CSV-Export</h3>
+        <label class="dialog-label">Zeitraum
+          <select id="exportRange">
+            <option value="thisMonth">Aktueller Monat</option>
+            <option value="lastMonth">Letzter Monat</option>
+            <option value="custom">Benutzerdefiniert</option>
+            <option value="all">Alle Daten</option>
+          </select>
+        </label>
+        <div id="customDates" hidden>
+          <label class="dialog-label" style="margin-top:8px">Von
+            <input type="date" id="exportFrom" />
+          </label>
+          <label class="dialog-label" style="margin-top:8px">Bis
+            <input type="date" id="exportTo" />
+          </label>
+        </div>
+        <label class="dialog-label" style="margin-top:8px">Dateiname
+          <input type="text" id="exportFilename" />
+        </label>
+        <p id="exportCount" class="small" style="margin:6px 0 0"></p>
+        <button id="exportConfirmBtn" class="btn-primary btn-full" style="margin-top:10px">Exportieren</button>
+      </div>
+    </section>
+
+    <!-- TAB: Einstellungen -->
+    <section id="tab-einstellungen" class="tab-section hidden">
+
+      <!-- Einnahmen -->
+      <div class="card">
+        <h3 class="card-title">Einnahmen (aktueller Monat)</h3>
+        <label>Netto-Einnahmen (€)
+          <input type="number" id="incomeInput" step="0.01" inputmode="decimal" placeholder="z.B. 2500.00" />
+        </label>
+        <div class="buttons" style="margin-top:8px">
+          <button id="incomeSaveBtn" class="btn-primary">Speichern</button>
+          <button id="incomeClearBtn" class="btn-secondary">Entfernen</button>
+        </div>
+        <p class="small hint-text" style="margin-top:6px">Einnahmen werden pro Monat gespeichert.</p>
+      </div>
+
+      <!-- Budget -->
+      <div class="card" style="margin-top:12px">
+        <h3 class="card-title">Variablen Budget (monatlich)</h3>
+        <label>Budget für variable Ausgaben (€)
+          <input type="number" id="budgetInput" step="0.01" inputmode="decimal" placeholder="z.B. 500.00" />
+        </label>
+        <div class="buttons" style="margin-top:8px">
+          <button id="budgetSaveBtn" class="btn-primary">Speichern</button>
+          <button id="budgetClearBtn" class="btn-secondary">Entfernen</button>
+        </div>
+      </div>
+
+      <!-- Fixkosten -->
+      <div class="card" style="margin-top:12px">
+        <h3 class="card-title">Fixkosten</h3>
+        <p class="small hint-text">Einmalig pflegen – werden automatisch jeden Monat gezählt.</p>
+        <ul id="fixedList" class="fixed-list"></ul>
+        <div class="fixed-add-row">
+          <input type="text" id="fixedName" placeholder="Bezeichnung (z.B. Miete)" style="flex:1" />
+          <input type="number" id="fixedAmount" step="0.01" inputmode="decimal" placeholder="Betrag" style="width:100px" />
+          <button id="fixedAddBtn" class="btn-primary">+</button>
+        </div>
+      </div>
+
+      <!-- Daten -->
+      <div class="card" style="margin-top:12px">
+        <h3 class="card-title">Daten</h3>
+        <button id="clearBtn" class="btn-danger btn-full">Alle Ausgaben löschen</button>
+      </div>
+
+      <footer class="version-footer">
+        <span id="versionLabel"></span>
+      </footer>
+    </section>
+
   </main>
 
-  <!-- Export-Dialog -->
-  <div id="exportOverlay" class="overlay hidden">
-    <div class="dialog">
-      <h2>Export (CSV)</h2>
-      <label class="dialog-label">Zeitraum
-        <select id="exportRange">
-          <option value="thisMonth">Aktueller Monat</option>
-          <option value="lastMonth">Letzter Monat</option>
-          <option value="custom">Benutzerdefiniert</option>
-          <option value="all">Alle Daten</option>
-        </select>
-      </label>
-      <div id="customDates" hidden>
-        <label class="dialog-label">Von
-          <input type="date" id="exportFrom" />
-        </label>
-        <label class="dialog-label">Bis
-          <input type="date" id="exportTo" />
-        </label>
-      </div>
-      <label class="dialog-label">Dateiname
-        <input type="text" id="exportFilename" />
-      </label>
-      <p id="exportCount" class="small"></p>
-      <div class="dialog-buttons">
-        <button id="exportConfirmBtn">Exportieren</button>
-        <button id="exportCancelBtn" class="btn-secondary">Abbrechen</button>
-      </div>
-    </div>
-  </div>
+  <!-- ── Bottom Tab Bar ── -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="erfassen">
+      <span class="tab-icon">＋</span>
+      <span class="tab-label">Erfassen</span>
+    </button>
+    <button class="tab-btn" data-tab="eintraege">
+      <span class="tab-icon">📋</span>
+      <span class="tab-label">Einträge</span>
+    </button>
+    <button class="tab-btn" data-tab="analyse">
+      <span class="tab-icon">📊</span>
+      <span class="tab-label">Analyse</span>
+    </button>
+    <button class="tab-btn" data-tab="einstellungen">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">Einstellungen</span>
+    </button>
+  </nav>
 
   <script src="app.js"></script>
 </body>

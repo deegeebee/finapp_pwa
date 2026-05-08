@@ -1,5 +1,5 @@
-// Built: 2026-04-12T15:28:13Z
-const CACHE = 'pwacache-2026-04-28T09:23:00Z';
+// Built: 2026-05-08T00:00:00Z
+const CACHE = 'pwacache-2026-05-08T00:00:00Z';
 const ASSETS = [
   '.', 'index.html', 'styles.css', 'app.js',
   'manifest.json', 'icon-192.png', 'icon-512.png'
@@ -10,7 +10,6 @@ self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// Alten Cache beim Aktivieren löschen
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -20,7 +19,6 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
-// Stale-while-revalidate: serve cache immediately, refresh in background
 self.addEventListener('fetch', e => {
   e.respondWith(
     caches.open(CACHE).then(cache =>
@@ -30,8 +28,7 @@ self.addEventListener('fetch', e => {
             cache.put(e.request, response.clone());
           }
           return response;
-        }).catch(() => cached); // offline fallback
-
+        }).catch(() => cached);
         return cached || networkFetch;
       })
     )
