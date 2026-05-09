@@ -300,11 +300,13 @@ button { cursor: pointer; font-family: inherit; }
 .fixed-list li:last-child { border-bottom: none; }
 .fixed-list .fixed-name { flex: 1; }
 .fixed-list .fixed-amt  { font-weight: 500; min-width: 70px; text-align: right; }
+.fixed-list .fixed-from { font-size: 0.75rem; color: #888; min-width: 70px; text-align: right; }
 .fixed-list .fixed-del  {
   background: none; border: none;
   color: #c0392b; font-size: 1rem;
   padding: 0 4px; cursor: pointer;
 }
+.fixed-version { font-size: 0.7rem; color: #aaa; font-weight: 400; }
 .fixed-add-row {
   display: flex;
   gap: 6px;
