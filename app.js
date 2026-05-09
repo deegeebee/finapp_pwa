@@ -348,35 +348,87 @@ document.getElementById('nextMonthAnalyseBtn').addEventListener('click', () => {
 // ── CSV-Export (im Analyse-Tab) ────────────────────────────────────────────
 
 const exportRangeEl    = document.getElementById('exportRange');
+const exportFormatEl   = document.getElementById('exportFormat');
 const customDatesEl    = document.getElementById('customDates');
 const exportFromEl     = document.getElementById('exportFrom');
 const exportToEl       = document.getElementById('exportTo');
 const exportFilenameEl = document.getElementById('exportFilename');
 const exportCountEl    = document.getElementById('exportCount');
 
-function buildCSV(entries, monthKeys) {
-  const q = s => {
-    const str = String(s);
-    return str.includes(',') || str.includes('"') || str.includes('\n')
-      ? '"' + str.replace(/"/g, '""') + '"' : str;
-  };
-  const lines = ['Datum,Preis,Typ,Kategorie/Position,Anmerkung'];
+const CATS = ['Basis', 'Extra', 'Luxus'];
 
-  // Variable Ausgaben
+function q(s) {
+  const str = String(s == null ? '' : s);
+  return str.includes(',') || str.includes('"') || str.includes('\n')
+    ? '"' + str.replace(/"/g, '""') + '"' : str;
+}
+
+// Option 2: flache Tabelle, eine Zeile pro Buchung/Fixkostenposition pro Monat
+function buildCSVFlat(entries, monthKeys) {
+  const lines = ['Datum,Monat,Typ,Kategorie,Position/Anmerkung,Betrag'];
+
   entries.forEach(e => {
-    lines.push(e.date + ',' + Number(e.price).toFixed(2) + ',variabel,' + q(e.category) + ',' + q(e.remarks || ''));
+    lines.push([
+      e.date,
+      toMonthKey(new Date(e.date)),
+      'variabel',
+      q(e.category),
+      q(e.remarks || ''),
+      Number(e.price).toFixed(2)
+    ].join(','));
   });
 
-  // Fixkosten pro Monat – historisch korrekte Werte
-  if (monthKeys && monthKeys.length > 0) {
-    monthKeys.forEach(mk => {
-      getFixedCostsForMonthExport(mk).forEach(f => {
-        const dateStr = mk + '-01';
-        const note = 'gueltig ab ' + (f.validFrom || 'immer') + (f.endMonth ? ' bis ' + f.endMonth : '');
-        lines.push(dateStr + ',' + Number(f.amount).toFixed(2) + ',Fixkosten,' + q(f.name) + ',' + note);
-      });
+  monthKeys.forEach(mk => {
+    getFixedCostsForMonthExport(mk).forEach(f => {
+      const cat = f.category || 'Basis';
+      const note = 'gueltig ab ' + (f.validFrom || 'immer') + (f.endMonth ? ' bis ' + f.endMonth : '');
+      lines.push([
+        mk + '-01',
+        mk,
+        'fix',
+        q(cat),
+        q(f.name) + ' (' + note + ')',
+        Number(f.amount).toFixed(2)
+      ].join(','));
     });
-  }
+  });
+
+  return lines.join('\n');
+}
+
+// Option 3: eine Zeile pro Monat, Spalten für jede Kategorie (fix + variabel zusammen)
+function buildCSVMonthly(entries, monthKeys) {
+  const header = ['Monat', 'Einnahmen', 'Fixkosten_gesamt', ...CATS.map(c => 'Variabel_' + c), ...CATS.map(c => 'Fix_' + c), 'Ausgaben_gesamt', 'Ersparnis'];
+  const lines  = [header.join(',')];
+
+  monthKeys.forEach(mk => {
+    const income     = getIncomeForMonth(mk) || '';
+    const fixItems   = getFixedCostsForMonthExport(mk);
+    const fixTotal   = fixItems.reduce((s, f) => s + Number(f.amount), 0);
+    const varEntries = entries.filter(e => toMonthKey(new Date(e.date)) === mk);
+
+    const varByCat = {};
+    CATS.forEach(c => { varByCat[c] = 0; });
+    varEntries.forEach(e => { varByCat[e.category] = (varByCat[e.category] || 0) + Number(e.price); });
+
+    const fixByCat = {};
+    CATS.forEach(c => { fixByCat[c] = 0; });
+    fixItems.forEach(f => { const c = f.category || 'Basis'; fixByCat[c] = (fixByCat[c] || 0) + Number(f.amount); });
+
+    const varTotal   = CATS.reduce((s, c) => s + varByCat[c], 0);
+    const totalOut   = fixTotal + varTotal;
+    const savings    = income !== '' ? (income - totalOut).toFixed(2) : '';
+
+    lines.push([
+      mk,
+      income !== '' ? Number(income).toFixed(2) : '',
+      fixTotal.toFixed(2),
+      ...CATS.map(c => varByCat[c].toFixed(2)),
+      ...CATS.map(c => fixByCat[c].toFixed(2)),
+      totalOut.toFixed(2),
+      savings
+    ].join(','));
+  });
 
   return lines.join('\n');
 }
@@ -400,18 +452,17 @@ function getRangeBounds(range) {
 }
 
 function updateFilename() {
-  const range = exportRangeEl.value;
-  const now   = new Date();
+  const range  = exportRangeEl.value;
+  const format = exportFormatEl.value;
+  const now    = new Date();
+  const suffix = format === 'monthly' ? '-monatlich' : '-detail';
   let name;
-  if (range === 'thisMonth')  name = `ausgaben-${toMonthKey(now)}`;
+  if (range === 'thisMonth')       name = 'ausgaben-' + toMonthKey(now) + suffix;
   else if (range === 'lastMonth') {
     const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    name = `ausgaben-${toMonthKey(lm)}`;
-  } else if (range === 'custom') {
-    name = `ausgaben-${exportFromEl.value || 'von'}_${exportToEl.value || 'bis'}`;
-  } else {
-    name = 'ausgaben-gesamt';
-  }
+    name = 'ausgaben-' + toMonthKey(lm) + suffix;
+  } else if (range === 'custom')   name = 'ausgaben-' + (exportFromEl.value || 'von') + '_' + (exportToEl.value || 'bis') + suffix;
+  else                             name = 'ausgaben-gesamt' + suffix;
   exportFilenameEl.value = name + '.csv';
 }
 
@@ -425,28 +476,23 @@ function updateExportPreview() {
     return true;
   });
 
-  // Betroffene Monate ermitteln (für Fixkosten-Export)
   const monthSet = new Set();
   filtered.forEach(e => monthSet.add(toMonthKey(new Date(e.date))));
 
   if (from && to) {
-    // Zeitraum bekannt: alle Monate im Bereich ergänzen (auch ohne variable Ausgaben)
     let cur = new Date(from.getFullYear(), from.getMonth(), 1);
     const end = new Date(to.getFullYear(), to.getMonth(), 1);
     while (cur <= end) { monthSet.add(toMonthKey(cur)); cur.setMonth(cur.getMonth() + 1); }
   } else if (exportRangeEl.value === 'all') {
-    // "Alle Daten": frühesten und spätesten Monat aus Einträgen + Fixkosten bestimmen
-    const allFixed = loadFixedCosts();
+    const allFixed  = loadFixedCosts();
     const allMonths = [
       ...allEntries.map(e => toMonthKey(new Date(e.date))),
       ...allFixed.map(f => f.validFrom || toMonthKey(new Date())),
-      toMonthKey(new Date()), // immer aktuellen Monat einschließen
+      toMonthKey(new Date()),
     ].sort();
     if (allMonths.length > 0) {
-      const earliest = allMonths[0];
-      const latest   = allMonths[allMonths.length - 1];
-      const [ey, em] = earliest.split('-').map(Number);
-      const [ly, lm] = latest.split('-').map(Number);
+      const [ey, em] = allMonths[0].split('-').map(Number);
+      const [ly, lm] = allMonths[allMonths.length - 1].split('-').map(Number);
       let cur = new Date(ey, em - 1, 1);
       const end = new Date(ly, lm - 1, 1);
       while (cur <= end) { monthSet.add(toMonthKey(cur)); cur.setMonth(cur.getMonth() + 1); }
@@ -454,7 +500,8 @@ function updateExportPreview() {
   }
 
   const monthKeys = Array.from(monthSet).sort();
-  exportCountEl.textContent = filtered.length + ' variable Einträge + Fixkosten für ' + monthKeys.length + ' Monat(e).';
+  const fmt = exportFormatEl.value === 'monthly' ? 'Monatszusammenfassung' : 'Detailtabelle';
+  exportCountEl.textContent = fmt + ': ' + filtered.length + ' variable Einträge, ' + monthKeys.length + ' Monat(e).';
   return { filtered, monthKeys };
 }
 
@@ -463,20 +510,24 @@ exportRangeEl.addEventListener('change', () => {
   updateFilename();
   updateExportPreview();
 });
-exportFromEl.addEventListener('change', () => { updateFilename(); updateExportPreview(); });
-exportToEl.addEventListener('change',   () => { updateFilename(); updateExportPreview(); });
+exportFormatEl.addEventListener('change', () => { updateFilename(); updateExportPreview(); });
+exportFromEl.addEventListener('change',   () => { updateFilename(); updateExportPreview(); });
+exportToEl.addEventListener('change',     () => { updateFilename(); updateExportPreview(); });
 
 document.getElementById('exportConfirmBtn').addEventListener('click', () => {
   const { filtered, monthKeys } = updateExportPreview();
   if (filtered.length === 0 && monthKeys.length === 0) { alert('Keine Einträge im gewählten Zeitraum.'); return; }
-  const csv  = buildCSV(filtered, monthKeys);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const csv  = exportFormatEl.value === 'monthly'
+    ? buildCSVMonthly(filtered, monthKeys)
+    : buildCSVFlat(filtered, monthKeys);
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href = url; a.download = exportFilenameEl.value || 'ausgaben.csv';
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
 });
+
 
 // ── Einstellungen: Einnahmen ───────────────────────────────────────────────
 
@@ -598,6 +649,7 @@ function renderFixedList() {
 
       li.innerHTML =
         '<span class="fixed-name">' + escapeHtml(f.name) + ' ' + badge + '</span>' +
+        '<span class="fixed-cat cat-badge-' + (f.category || 'Basis').toLowerCase() + '">' + (f.category || 'Basis') + '</span>' +
         '<span class="fixed-from">ab ' + (f.validFrom || '–') + '</span>' +
         '<span class="fixed-amt">' + fmtEur(f.amount) + '</span>' +
         '<span class="fixed-actions">' + buttons + '</span>';
@@ -645,11 +697,11 @@ document.getElementById('fixedAddBtn').addEventListener('click', () => {
   const name      = document.getElementById('fixedName').value.trim();
   const amount    = parseFloat(document.getElementById('fixedAmount').value);
   const rawFrom   = document.getElementById('fixedValidFrom').value.trim();
+  const category  = document.getElementById('fixedCategory').value || 'Basis';
 
   if (!name) { alert('Bitte eine Bezeichnung eingeben.'); return; }
   if (!Number.isFinite(amount) || amount <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
 
-  // validFrom: leer = aktueller Monat; sonst muss Format YYYY-MM sein
   let validFrom;
   if (!rawFrom) {
     validFrom = toMonthKey(new Date());
@@ -661,17 +713,20 @@ document.getElementById('fixedAddBtn').addEventListener('click', () => {
   }
 
   const costs = loadFixedCosts();
-  costs.push({ id: Date.now(), name, amount, validFrom });
+  costs.push({ id: Date.now(), name, amount, validFrom, category });
   saveFixedCosts(costs);
 
   document.getElementById('fixedName').value      = '';
   document.getElementById('fixedAmount').value    = '';
   document.getElementById('fixedValidFrom').value = '';
+  // Reset category buttons to Basis
+  document.querySelectorAll('.fixed-cat-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  document.getElementById('fixedCategory').value = 'Basis';
   renderFixedList();
   renderMonthSummary();
 });
 
-// ── Kategorie-Buttons ──────────────────────────────────────────────────────
+// ── Kategorie-Buttons (Ausgaben) ───────────────────────────────────────────
 
 const catEl = document.getElementById('category');
 
@@ -680,6 +735,16 @@ document.querySelectorAll('.cat-btn').forEach(btn => {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     catEl.value = btn.dataset.value;
+  });
+});
+
+// ── Kategorie-Buttons (Fixkosten) ──────────────────────────────────────────
+
+document.querySelectorAll('.fixed-cat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fixed-cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('fixedCategory').value = btn.dataset.value;
   });
 });
 
@@ -774,6 +839,7 @@ document.getElementById('clearBtn').addEventListener('click', () => {
 
 function initExport() {
   exportRangeEl.value  = 'thisMonth';
+  exportFormatEl.value = 'flat';
   customDatesEl.hidden = true;
   updateFilename();
   updateExportPreview();

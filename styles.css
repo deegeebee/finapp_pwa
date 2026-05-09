@@ -330,7 +330,23 @@ button { cursor: pointer; font-family: inherit; }
   margin-top: 4px;
   font-size: 0.9rem;
 }
-.fixed-version { font-size: 0.7rem; color: #aaa; font-weight: 400; }
+.fixed-list .fixed-cat {
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cat-badge-basis  { background: rgba(192,57,43,0.12);  color: #c0392b; }
+.cat-badge-extra  { background: rgba(196,154,0,0.12);  color: #c49a00; }
+.cat-badge-luxus  { background: rgba(30,132,73,0.12);  color: #1e8449; }
+body.dark .cat-badge-basis,
+body:not(.light) .cat-badge-basis { background: rgba(224,84,68,0.25);  color: #e05444; }
+body.dark .cat-badge-extra,
+body:not(.light) .cat-badge-extra { background: rgba(212,160,23,0.25); color: #d4a017; }
+body.dark .cat-badge-luxus,
+body:not(.light) .cat-badge-luxus { background: rgba(39,174,96,0.25);  color: #27ae60; }
 
 /* dark mode badges */
 body.dark .fixed-badge.cancelled,

@@ -133,6 +133,12 @@
             <option value="all">Alle Daten</option>
           </select>
         </label>
+        <label class="dialog-label" style="margin-top:8px">Format
+          <select id="exportFormat">
+            <option value="flat">Detailtabelle (eine Zeile pro Buchung)</option>
+            <option value="monthly">Monatszusammenfassung (eine Zeile pro Monat)</option>
+          </select>
+        </label>
         <div id="customDates" hidden>
           <label class="dialog-label" style="margin-top:8px">Von
             <input type="date" id="exportFrom" />
@@ -186,7 +192,14 @@
           <input type="text" id="fixedName" placeholder="Bezeichnung (z.B. Miete)" />
           <input type="number" id="fixedAmount" step="0.01" inputmode="decimal" placeholder="Betrag (€)" />
           <input type="text" id="fixedValidFrom" placeholder="Gültig ab (JJJJ-MM)" maxlength="7" />
-          <button id="fixedAddBtn" class="btn-primary">+</button>
+          <div class="cat-label" style="margin-top:6px">Kategorie</div>
+          <div class="cat-buttons" style="gap:6px">
+            <button type="button" class="cat-btn fixed-cat-btn cat-rot active" data-value="Basis">Basis</button>
+            <button type="button" class="cat-btn fixed-cat-btn cat-gelb" data-value="Extra">Extra</button>
+            <button type="button" class="cat-btn fixed-cat-btn cat-gruen" data-value="Luxus">Luxus</button>
+          </div>
+          <input type="hidden" id="fixedCategory" value="Basis" />
+          <button id="fixedAddBtn" class="btn-primary">Fixkosten hinzufügen</button>
         </div>
         <p class="hint-text" style="margin-top:4px">„Gültig ab" im Format JJJJ-MM, z.B. 2026-05. Leer lassen = ab sofort.</p>
       </div>
