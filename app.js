@@ -396,7 +396,8 @@ function updateFilename() {
 
 function updateExportPreview() {
   const { from, to } = getRangeBounds(exportRangeEl.value);
-  const filtered = loadEntries().filter(e => {
+  const allEntries = loadEntries();
+  const filtered = allEntries.filter(e => {
     const d = new Date(e.date);
     if (from && d < from) return false;
     if (to   && d > new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59)) return false;
@@ -406,15 +407,32 @@ function updateExportPreview() {
   // Betroffene Monate ermitteln (für Fixkosten-Export)
   const monthSet = new Set();
   filtered.forEach(e => monthSet.add(toMonthKey(new Date(e.date))));
-  // Bei "alle Daten" oder großen Zeiträumen ohne variable Einträge:
-  // Fixkosten-Monate aus dem Zeitraum ergänzen
+
   if (from && to) {
+    // Zeitraum bekannt: alle Monate im Bereich ergänzen (auch ohne variable Ausgaben)
     let cur = new Date(from.getFullYear(), from.getMonth(), 1);
     const end = new Date(to.getFullYear(), to.getMonth(), 1);
     while (cur <= end) { monthSet.add(toMonthKey(cur)); cur.setMonth(cur.getMonth() + 1); }
+  } else if (exportRangeEl.value === 'all') {
+    // "Alle Daten": frühesten und spätesten Monat aus Einträgen + Fixkosten bestimmen
+    const allFixed = loadFixedCosts();
+    const allMonths = [
+      ...allEntries.map(e => toMonthKey(new Date(e.date))),
+      ...allFixed.map(f => f.validFrom || toMonthKey(new Date())),
+      toMonthKey(new Date()), // immer aktuellen Monat einschließen
+    ].sort();
+    if (allMonths.length > 0) {
+      const earliest = allMonths[0];
+      const latest   = allMonths[allMonths.length - 1];
+      const [ey, em] = earliest.split('-').map(Number);
+      const [ly, lm] = latest.split('-').map(Number);
+      let cur = new Date(ey, em - 1, 1);
+      const end = new Date(ly, lm - 1, 1);
+      while (cur <= end) { monthSet.add(toMonthKey(cur)); cur.setMonth(cur.getMonth() + 1); }
+    }
   }
-  const monthKeys = Array.from(monthSet).sort();
 
+  const monthKeys = Array.from(monthSet).sort();
   exportCountEl.textContent = filtered.length + ' variable Einträge + Fixkosten für ' + monthKeys.length + ' Monat(e).';
   return { filtered, monthKeys };
 }
@@ -560,9 +578,21 @@ function renderFixedList() {
 document.getElementById('fixedAddBtn').addEventListener('click', () => {
   const name      = document.getElementById('fixedName').value.trim();
   const amount    = parseFloat(document.getElementById('fixedAmount').value);
-  const validFrom = document.getElementById('fixedValidFrom').value || toMonthKey(new Date());
+  const rawFrom   = document.getElementById('fixedValidFrom').value.trim();
+
   if (!name) { alert('Bitte eine Bezeichnung eingeben.'); return; }
   if (!Number.isFinite(amount) || amount <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
+
+  // validFrom: leer = aktueller Monat; sonst muss Format YYYY-MM sein
+  let validFrom;
+  if (!rawFrom) {
+    validFrom = toMonthKey(new Date());
+  } else if (/^\d{4}-\d{2}$/.test(rawFrom)) {
+    validFrom = rawFrom;
+  } else {
+    alert('„Gültig ab" bitte im Format JJJJ-MM eingeben, z.B. 2026-05.');
+    return;
+  }
 
   const costs = loadFixedCosts();
   costs.push({ id: Date.now(), name, amount, validFrom });

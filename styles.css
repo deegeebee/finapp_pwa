@@ -308,12 +308,23 @@ button { cursor: pointer; font-family: inherit; }
 }
 .fixed-version { font-size: 0.7rem; color: #aaa; font-weight: 400; }
 .fixed-add-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
-  align-items: center;
-  margin-top: 4px;
+  margin-top: 8px;
 }
 .fixed-add-row input { margin: 0; }
+.fixed-add-row button {
+  grid-column: 1 / -1;
+  padding: 9px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
 
 /* ── Banner ───────────────────────────────────────────────────────────────── */
 .banner {
