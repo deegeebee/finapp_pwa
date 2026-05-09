@@ -185,6 +185,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 // ── Monatsübersicht (Tab Erfassen) ─────────────────────────────────────────
 
+const CAT_COLORS = { Basis: '#1e8449', Extra: '#BA7517', Luxus: '#c0392b' };
+
 function renderMonthSummary() {
   const now      = new Date();
   const monthKey = toMonthKey(now);
@@ -196,36 +198,58 @@ function renderMonthSummary() {
   const savings  = income !== null ? income - totalOut : null;
   const budget   = loadBudget();
 
-  document.getElementById('sumExpenses').textContent = fmtEur(totalOut);
-  document.getElementById('sumFixed').textContent    = fmtEur(fixSum);
+  // Category breakdown
+  const byCat = { Basis: 0, Extra: 0, Luxus: 0 };
+  entries.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + Number(e.price); });
+
+  // ── Variable Ausgaben: Hauptzeile ──
+  document.getElementById('sumMonthLabel').textContent = monthLabel(monthKey);
+  document.getElementById('sumVarAmount').textContent = fmtEur(varSum);
+
+  // Budget-Status
+  const budgetStatusEl = document.getElementById('budgetStatus');
+  if (budget !== null) {
+    const pct = Math.min((varSum / budget) * 100, 100);
+    const color = varSum > budget ? '#A32D2D' : pct >= 80 ? '#BA7517' : '#0F6E56';
+    const budgetFmt = Number.isInteger(budget) ? budget + ' €' : fmtEur(budget);
+    budgetStatusEl.textContent = Math.round(pct) + ' % von ' + budgetFmt;
+    budgetStatusEl.style.color = color;
+    budgetStatusEl.hidden = false;
+  } else {
+    budgetStatusEl.hidden = true;
+  }
+
+  // Segmentierter Balken (Basis / Extra / Luxus)
+  // Rest-Segment ist via CSS flex:1 immer sichtbar wenn Segmente < 100%
+  const segBar = document.getElementById('segBar');
+  const ref = budget || varSum || 1;
+  segBar.innerHTML = Object.entries(byCat).map(([cat, amt]) => {
+    if (amt <= 0) return '';
+    const w = Math.min((amt / ref) * 100, 100).toFixed(1);
+    return '<div class="seg-piece" style="width:' + w + '%;background:' + CAT_COLORS[cat] + '" title="' + cat + ': ' + fmtEur(amt) + '"></div>';
+  }).join('');
+
+  // Kategorie-Labels unter dem Balken
+  document.getElementById('segLabels').innerHTML = Object.entries(byCat)
+    .filter(([, amt]) => amt > 0)
+    .map(([cat, amt]) =>
+      `<span class="seg-lbl-item"><span class="seg-dot" style="background:${CAT_COLORS[cat]}"></span>${cat} ${fmtEur(amt)}</span>`
+    ).join('');
+
+  // ── Sekundäre Kacheln ──
+  document.getElementById('sumFixed').textContent = fmtEur(fixSum);
 
   const incEl = document.getElementById('sumIncome');
-  incEl.textContent = income !== null ? fmtEur(income) : '— €';
+  incEl.textContent = income !== null ? fmtEur(income) : '—';
 
   const savEl = document.getElementById('sumSavings');
   if (savings !== null) {
-    savEl.textContent = (savings >= 0 ? '+' : '') + fmtEur(savings);
+    const pctSav = income > 0 ? ' (' + Math.round((savings / income) * 100) + ' %)' : '';
+    savEl.textContent = (savings >= 0 ? '+' : '') + fmtEur(savings) + pctSav;
     savEl.className = 'stat-val ' + (savings >= 0 ? 'green' : 'red');
   } else {
-    savEl.textContent = '— €';
+    savEl.textContent = '—';
     savEl.className = 'stat-val muted';
-  }
-
-  // Budget-Balken (bezieht sich nur auf variable Ausgaben)
-  const barWrap = document.getElementById('budgetBarWrap');
-  if (budget !== null) {
-    const pct = Math.min((varSum / budget) * 100, 100);
-    const fill = document.getElementById('budgetBarFill');
-    fill.style.width = pct.toFixed(1) + '%';
-    fill.classList.remove('near', 'over');
-    if (varSum > budget)  fill.classList.add('over');
-    else if (pct >= 80)   fill.classList.add('near');
-    document.getElementById('budgetBarLabel').textContent =
-      `Variable Ausgaben: ${fmtEur(varSum)} / ${fmtEur(budget)}`;
-    document.getElementById('budgetBarPct').textContent = Math.round(pct) + ' %';
-    barWrap.hidden = false;
-  } else {
-    barWrap.hidden = true;
   }
 }
 

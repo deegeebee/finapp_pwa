@@ -29,33 +29,39 @@
       </div>
 
       <div class="month-summary" id="monthSummaryCard">
+
+        <!-- Hauptbereich: Variable Ausgaben -->
+        <div class="sum-main-label">Variable Ausgaben — <span id="sumMonthLabel"></span></div>
+        <div class="sum-main-row">
+          <span class="sum-main-amount" id="sumVarAmount">0,00 €</span>
+          <span class="sum-budget-status" id="budgetStatus" hidden></span>
+        </div>
+
+        <!-- Segmentierter Balken -->
+        <div class="seg-bar-bg">
+          <div class="seg-bar-inner" id="segBar"></div>
+          <div class="seg-bar-rest" id="segBarRest"></div>
+        </div>
+        <div class="seg-labels" id="segLabels"></div>
+
+        <hr class="sum-divider" />
+
+        <!-- Sekundäre Kacheln -->
         <div class="summary-grid">
-          <div class="stat-card">
-            <div class="stat-label">Einnahmen</div>
-            <div class="stat-val green" id="sumIncome">— €</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-label">Ausgaben</div>
-            <div class="stat-val red" id="sumExpenses">0,00 €</div>
-          </div>
           <div class="stat-card">
             <div class="stat-label">Fixkosten</div>
             <div class="stat-val muted" id="sumFixed">0,00 €</div>
           </div>
           <div class="stat-card">
+            <div class="stat-label">Einnahmen</div>
+            <div class="stat-val muted" id="sumIncome">— €</div>
+          </div>
+          <div class="stat-card" style="grid-column:1/-1">
             <div class="stat-label">Ersparnis</div>
             <div class="stat-val" id="sumSavings">— €</div>
           </div>
         </div>
-        <div id="budgetBarWrap" class="budget-bar-wrap" hidden>
-          <div class="budget-bar-row">
-            <span class="budget-bar-label" id="budgetBarLabel"></span>
-            <span class="budget-bar-pct" id="budgetBarPct"></span>
-          </div>
-          <div class="budget-bar-bg">
-            <div id="budgetBarFill" class="budget-bar-fill"></div>
-          </div>
-        </div>
+
       </div>
 
       <div class="form card">
