@@ -255,17 +255,29 @@ function renderList() {
     return;
   }
   entries.forEach(e => {
-    const li    = document.createElement('li');
-    const left  = document.createElement('div');
-    const date  = new Date(e.date).toLocaleDateString('de-DE');
-    const rem   = e.remarks ? `<div class="entry-remark">${escapeHtml(e.remarks)}</div>` : '';
+    const li   = document.createElement('li');
+    const left = document.createElement('div');
+    const date = new Date(e.date).toLocaleDateString('de-DE');
+    const rem  = e.remarks ? `<div class="entry-remark">${escapeHtml(e.remarks)}</div>` : '';
     left.innerHTML = `<strong>${escapeHtml(e.category)}</strong><div class="small">${date}</div>${rem}`;
+
     const right = document.createElement('div');
-    right.style.fontWeight = '500';
-    right.textContent = fmtEur(e.price);
+    right.className = 'entry-right';
+    right.innerHTML = `<span class="entry-amount">${fmtEur(e.price)}</span>
+      <button class="entry-del" data-id="${e.id}" title="Eintrag löschen">🗑</button>`;
+
     li.appendChild(left);
     li.appendChild(right);
     listEl.appendChild(li);
+  });
+
+  listEl.querySelectorAll('.entry-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (!confirm('Eintrag löschen?')) return;
+      saveEntries(loadEntries().filter(e => String(e.id) !== btn.dataset.id));
+      renderList();
+      renderMonthSummary();
+    });
   });
 }
 

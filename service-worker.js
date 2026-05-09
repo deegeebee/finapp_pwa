@@ -1,5 +1,5 @@
-// Built: 2026-05-0816:35:00Z
-const CACHE = 'pwacache-2026-05-08T16:34:00Z';
+// Built: 2026-05-0816:510Z
+const CACHE = 'pwacache-2026-05-08T16:51:00Z';
 const ASSETS = [
   '.', 'index.html', 'styles.css', 'app.js',
   'manifest.json', 'icon-192.png', 'icon-512.png'
