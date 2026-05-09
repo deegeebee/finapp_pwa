@@ -123,6 +123,8 @@ function getFixedCostsForMonthExport(monthKey) {
   });
   return Object.values(best);
 }
+
+function getFixedTotal(monthKey) {
   const mk = monthKey || toMonthKey(new Date());
   return getFixedCostsForMonth(mk).reduce((s, f) => s + Number(f.amount), 0);
 }
