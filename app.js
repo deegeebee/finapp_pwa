@@ -90,13 +90,15 @@ function saveFixedCosts(arr) {
  * Gibt für einen Monat (YYYY-MM) die gültigen Fixkosten zurück.
  * Pro eindeutigem Namen wird der neueste Eintrag genommen,
  * dessen validFrom ≤ monthKey ist. Einträge ohne validFrom gelten immer.
+ * Einträge mit endMonth ≤ monthKey werden als gekündigt ausgeschlossen.
  */
 function getFixedCostsForMonth(monthKey) {
   const all = loadFixedCosts();
   const best = {};
   all.forEach(f => {
     const from = f.validFrom || '0000-00';
-    if (from > monthKey) return;
+    if (from > monthKey) return;                        // noch nicht gültig
+    if (f.endMonth && f.endMonth <= monthKey) return;   // bereits gekündigt
     if (!best[f.name] || from > (best[f.name].validFrom || '0000-00')) {
       best[f.name] = f;
     }
@@ -104,7 +106,23 @@ function getFixedCostsForMonth(monthKey) {
   return Object.values(best);
 }
 
-function getFixedTotal(monthKey) {
+/**
+ * Für den CSV-Export: alle Fixkosten die in monthKey aktiv waren,
+ * inklusive später gekündigter Positionen.
+ */
+function getFixedCostsForMonthExport(monthKey) {
+  const all = loadFixedCosts();
+  const best = {};
+  all.forEach(f => {
+    const from = f.validFrom || '0000-00';
+    if (from > monthKey) return;                        // noch nicht gültig
+    if (f.endMonth && f.endMonth <= monthKey) return;   // in diesem Monat schon weg
+    if (!best[f.name] || from > (best[f.name].validFrom || '0000-00')) {
+      best[f.name] = f;
+    }
+  });
+  return Object.values(best);
+}
   const mk = monthKey || toMonthKey(new Date());
   return getFixedCostsForMonth(mk).reduce((s, f) => s + Number(f.amount), 0);
 }
@@ -350,9 +368,10 @@ function buildCSV(entries, monthKeys) {
   // Fixkosten pro Monat – historisch korrekte Werte
   if (monthKeys && monthKeys.length > 0) {
     monthKeys.forEach(mk => {
-      getFixedCostsForMonth(mk).forEach(f => {
+      getFixedCostsForMonthExport(mk).forEach(f => {
         const dateStr = mk + '-01';
-        lines.push(dateStr + ',' + Number(f.amount).toFixed(2) + ',Fixkosten,' + q(f.name) + ',gueltig ab ' + (f.validFrom || 'immer'));
+        const note = 'gueltig ab ' + (f.validFrom || 'immer') + (f.endMonth ? ' bis ' + f.endMonth : '');
+        lines.push(dateStr + ',' + Number(f.amount).toFixed(2) + ',Fixkosten,' + q(f.name) + ',' + note);
       });
     });
   }
@@ -529,45 +548,90 @@ function renderFixedList() {
     return;
   }
 
-  // Nach Name gruppieren, dann innerhalb jeder Gruppe nach validFrom sortieren
+  // Nach Name gruppieren, innerhalb jeder Gruppe nach validFrom absteigend
   const groups = {};
   costs.forEach(f => {
     if (!groups[f.name]) groups[f.name] = [];
     groups[f.name].push(f);
   });
-  Object.values(groups).forEach(g => g.sort((a, b) => (b.validFrom || '').localeCompare(a.validFrom || '')));
+  Object.values(groups).forEach(g =>
+    g.sort((a, b) => (b.validFrom || '').localeCompare(a.validFrom || ''))
+  );
 
-  // Aktuelle Gesamtsumme (dieser Monat)
   const currentMonthKey = toMonthKey(new Date());
   const currentTotal    = getFixedTotal(currentMonthKey);
 
   Object.entries(groups).forEach(([name, versions]) => {
     versions.forEach((f, i) => {
+      const isCancelled = !!(f.endMonth);
+      const isLatest    = i === 0;
       const li = document.createElement('li');
-      const isLatest = i === 0;
-      li.style.opacity = isLatest ? '1' : '0.5';
+
+      // Visual state
+      if (isCancelled) {
+        li.style.opacity = '0.45';
+      } else if (!isLatest) {
+        li.style.opacity = '0.55';
+      }
+
+      // Badge text
+      let badge = '';
+      if (isCancelled) {
+        badge = '<span class="fixed-badge cancelled">gekündigt ab ' + f.endMonth + '</span>';
+      } else if (versions.filter(v => !v.endMonth).length > 1 && isLatest) {
+        badge = '<span class="fixed-badge current">(aktuell)</span>';
+      } else if (!isLatest) {
+        badge = '<span class="fixed-badge old">(alt)</span>';
+      }
+
+      // Buttons: cancelled entries only get hard-delete; active get cancel + hard-delete
+      let buttons;
+      if (isCancelled) {
+        buttons = '<button class="fixed-hardel" data-id="' + f.id + '" title="Eintrag unwiderruflich löschen">🗑</button>';
+      } else {
+        buttons =
+          '<button class="fixed-cancel" data-id="' + f.id + '" title="Kündigen (Verlauf bleibt erhalten)">✕</button>' +
+          '<button class="fixed-hardel" data-id="' + f.id + '" title="Eintrag unwiderruflich löschen">🗑</button>';
+      }
+
       li.innerHTML =
-        '<span class="fixed-name">' + escapeHtml(f.name) +
-          (versions.length > 1 ? ' <span class="fixed-version">' + (isLatest ? '(aktuell)' : '(alt)') + '</span>' : '') +
-        '</span>' +
+        '<span class="fixed-name">' + escapeHtml(f.name) + ' ' + badge + '</span>' +
         '<span class="fixed-from">ab ' + (f.validFrom || '–') + '</span>' +
         '<span class="fixed-amt">' + fmtEur(f.amount) + '</span>' +
-        '<button class="fixed-del" data-id="' + f.id + '" title="Löschen">✕</button>';
+        '<span class="fixed-actions">' + buttons + '</span>';
+
       ul.appendChild(li);
     });
   });
 
   // Summenzeile
   const sumLi = document.createElement('li');
-  sumLi.style.fontWeight = '600';
-  sumLi.style.borderTop  = '1px solid #ccc';
-  sumLi.style.marginTop  = '4px';
-  sumLi.innerHTML = '<span class="fixed-name">Gesamt (aktuell)</span><span class="fixed-amt">' + fmtEur(currentTotal) + '</span>';
+  sumLi.className = 'fixed-total-row';
+  sumLi.innerHTML =
+    '<span class="fixed-name"><strong>Gesamt (aktuell)</strong></span>' +
+    '<span class="fixed-amt"><strong>' + fmtEur(currentTotal) + '</strong></span>';
   ul.appendChild(sumLi);
 
-  ul.querySelectorAll('.fixed-del').forEach(btn => {
+  // ✕ Kündigen: fragt nach endMonth, setzt es auf dem Eintrag
+  ul.querySelectorAll('.fixed-cancel').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id      = Number(btn.dataset.id);
+      const rawEnd  = prompt('Ab welchem Monat gekündigt? (Format JJJJ-MM, z.B. 2026-07)\nDer Eintrag bleibt für frühere Monate im Verlauf erhalten.');
+      if (!rawEnd) return;
+      if (!/^\d{4}-\d{2}$/.test(rawEnd)) { alert('Ungültiges Format. Bitte JJJJ-MM eingeben.'); return; }
+      const costs = loadFixedCosts();
+      const idx   = costs.findIndex(f => f.id === id);
+      if (idx !== -1) { costs[idx].endMonth = rawEnd; saveFixedCosts(costs); }
+      renderFixedList();
+      renderMonthSummary();
+    });
+  });
+
+  // 🗑 Wirklich löschen: entfernt den Eintrag komplett aus dem Speicher
+  ul.querySelectorAll('.fixed-hardel').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.id);
+      if (!confirm('Eintrag unwiderruflich löschen?\n\nNur sinnvoll bei Tippfehlern – historische Exporte werden dadurch unvollständig.')) return;
       saveFixedCosts(loadFixedCosts().filter(f => f.id !== id));
       renderFixedList();
       renderMonthSummary();

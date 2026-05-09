@@ -300,13 +300,51 @@ button { cursor: pointer; font-family: inherit; }
 .fixed-list li:last-child { border-bottom: none; }
 .fixed-list .fixed-name { flex: 1; }
 .fixed-list .fixed-amt  { font-weight: 500; min-width: 70px; text-align: right; }
-.fixed-list .fixed-from { font-size: 0.75rem; color: #888; min-width: 70px; text-align: right; }
-.fixed-list .fixed-del  {
-  background: none; border: none;
-  color: #c0392b; font-size: 1rem;
-  padding: 0 4px; cursor: pointer;
+.fixed-list .fixed-from { font-size: 0.75rem; color: #888; min-width: 64px; text-align: right; }
+.fixed-list .fixed-actions { display: flex; gap: 4px; margin-left: 4px; }
+.fixed-cancel {
+  background: none; border: 1px solid #c0392b;
+  color: #c0392b; font-size: 0.8rem;
+  border-radius: 4px; padding: 1px 5px; cursor: pointer;
+  line-height: 1.4;
+}
+.fixed-hardel {
+  background: none; border: 1px solid #bbb;
+  color: #aaa; font-size: 0.75rem;
+  border-radius: 4px; padding: 1px 4px; cursor: pointer;
+  line-height: 1.4;
+}
+.fixed-hardel:hover { border-color: #c0392b; color: #c0392b; }
+.fixed-badge {
+  font-size: 0.68rem; font-weight: 400;
+  border-radius: 3px; padding: 1px 4px;
+  vertical-align: middle; margin-left: 3px;
+}
+.fixed-badge.cancelled { background: #fde8e8; color: #a32d2d; }
+.fixed-badge.current   { background: #e8f0fe; color: #1a56db; }
+.fixed-badge.old       { background: #f0f0f0; color: #888; }
+.fixed-total-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 0 2px;
+  border-top: 1px solid #ccc;
+  margin-top: 4px;
+  font-size: 0.9rem;
 }
 .fixed-version { font-size: 0.7rem; color: #aaa; font-weight: 400; }
+
+/* dark mode badges */
+body.dark .fixed-badge.cancelled,
+body:not(.light) .fixed-badge.cancelled { background: #4a1a1a; color: #e88; }
+body.dark .fixed-badge.current,
+body:not(.light) .fixed-badge.current   { background: #1a2a4a; color: #88aaff; }
+body.dark .fixed-badge.old,
+body:not(.light) .fixed-badge.old       { background: #2a2a2a; color: #888; }
+body.dark .fixed-cancel,
+body:not(.light) .fixed-cancel          { border-color: #e05444; color: #e05444; }
+body.dark .fixed-hardel,
+body:not(.light) .fixed-hardel          { border-color: #444; color: #666; }
+body.dark .fixed-total-row,
+body:not(.light) .fixed-total-row       { border-color: #444; }
 .fixed-add-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
