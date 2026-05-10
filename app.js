@@ -185,7 +185,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 // ── Monatsübersicht (Tab Erfassen) ─────────────────────────────────────────
 
-const CAT_COLORS = { Basis: '#1e8449', Extra: '#BA7517', Luxus: '#c0392b' };
+const CAT_COLORS = { Muss: '#3B6D11', Soll: '#BA7517', Kann: '#993C1D' };
 
 function renderMonthSummary() {
   const now      = new Date();
@@ -199,7 +199,7 @@ function renderMonthSummary() {
   const budget   = loadBudget();
 
   // Category breakdown
-  const byCat = { Basis: 0, Extra: 0, Luxus: 0 };
+  const byCat = { Muss: 0, Soll: 0, Kann: 0 };
   entries.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + Number(e.price); });
 
   // ── Variable Ausgaben: Hauptzeile ──
@@ -219,7 +219,7 @@ function renderMonthSummary() {
     budgetStatusEl.hidden = true;
   }
 
-  // Segmentierter Balken (Basis / Extra / Luxus)
+  // Segmentierter Balken (Muss / Soll / Kann)
   // Rest-Segment ist via CSS flex:1 immer sichtbar wenn Segmente < 100%
   const segBar = document.getElementById('segBar');
   const ref = budget || varSum || 1;
@@ -229,11 +229,11 @@ function renderMonthSummary() {
     return '<div class="seg-piece" style="width:' + w + '%;background:' + CAT_COLORS[cat] + '" title="' + cat + ': ' + fmtEur(amt) + '"></div>';
   }).join('');
 
-  // Kategorie-Labels unter dem Balken
-  document.getElementById('segLabels').innerHTML = Object.entries(byCat)
-    .filter(([, amt]) => amt > 0)
-    .map(([cat, amt]) =>
-      `<span class="seg-lbl-item"><span class="seg-dot" style="background:${CAT_COLORS[cat]}"></span>${cat} ${fmtEur(amt)}</span>`
+  // Kategorie-Labels — immer alle drei anzeigen, auch wenn 0 €
+  document.getElementById('segLabels').innerHTML = Object.entries(CAT_COLORS)
+    .map(([cat, color]) =>
+      '<span class="seg-lbl-item"><span class="seg-dot" style="background:' + color + '"></span>' +
+      cat + ' ' + fmtEur(byCat[cat] || 0) + '</span>'
     ).join('');
 
   // ── Sekundäre Kacheln ──
@@ -316,25 +316,84 @@ document.getElementById('nextMonthBtn').addEventListener('click', () => {
 // ── Analyse-Tab ────────────────────────────────────────────────────────────
 
 let analyseMonthOffset = 0;
+let donutChartInstance = null;
+
+const DONUT_COLORS = {
+  Fixkosten: '#185FA5',
+  Muss:      '#3B6D11',
+  Soll:      '#BA7517',
+  Kann:      '#993C1D',
+};
 
 function renderAnalyse() {
   const monthKey = getMonthKeyWithOffset(analyseMonthOffset);
   document.getElementById('analyseMonthLabel').textContent = monthLabel(monthKey);
 
-  const entries = loadEntries().filter(e => toMonthKey(new Date(e.date)) === monthKey);
-  const varSum  = entries.reduce((s, e) => s + Number(e.price), 0);
-  const fixSum  = getFixedTotal(monthKey);
-  const total   = varSum + fixSum;
-  const income  = getIncomeForMonth(monthKey);
-  const savings = income !== null ? income - total : null;
+  const entries  = loadEntries().filter(e => toMonthKey(new Date(e.date)) === monthKey);
+  const varSum   = entries.reduce((s, e) => s + Number(e.price), 0);
+  const fixSum   = getFixedTotal(monthKey);
+  const total    = varSum + fixSum;
+  const income   = getIncomeForMonth(monthKey);
+  const savings  = income !== null ? income - total : null;
 
-  document.getElementById('aFixed').textContent    = fmtEur(fixSum);
-  document.getElementById('aVariable').textContent = fmtEur(varSum);
-  document.getElementById('aTotal').textContent    = fmtEur(total);
+  // Category sums
+  const byCat = { Muss: 0, Soll: 0, Kann: 0 };
+  entries.forEach(e => { byCat[e.category] = (byCat[e.category] || 0) + Number(e.price); });
 
+  // Donut data: Fixkosten first, then variable cats
+  const labels = ['Fixkosten', 'Muss', 'Soll', 'Kann'];
+  const data   = [fixSum, byCat.Muss, byCat.Soll, byCat.Kann];
+  const colors = labels.map(l => DONUT_COLORS[l]);
+
+  // Centre total
+  document.getElementById('donutTotal').textContent = total > 0 ? fmtEur(total) : '0 €';
+
+  // Draw / update chart
+  const ctx = document.getElementById('donutChart').getContext('2d');
+  if (donutChartInstance) donutChartInstance.destroy();
+
+  donutChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderWidth: 2,
+        borderColor: '#ffffff',
+        hoverOffset: 4,
+      }]
+    },
+    options: {
+      responsive: false,
+      cutout: '65%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + fmtEur(ctx.raw),
+          }
+        }
+      }
+    }
+  });
+
+  // Custom legend
+  const legendEl = document.getElementById('donutLegend');
+  legendEl.innerHTML = labels.map((lbl, i) =>
+    '<div class="donut-leg-item">' +
+      '<span class="donut-leg-sq" style="background:' + colors[i] + '"></span>' +
+      '<span class="donut-leg-name">' + lbl + '</span>' +
+      '<span class="donut-leg-amt">' + fmtEur(data[i]) + '</span>' +
+    '</div>'
+  ).join('');
+
+  // Summary rows
   const incEl = document.getElementById('aIncome');
   incEl.textContent = income !== null ? fmtEur(income) : '—';
   incEl.className = 'analyse-val' + (income !== null ? ' green' : '');
+
+  document.getElementById('aTotal').textContent = fmtEur(total);
 
   const savEl = document.getElementById('aSavings');
   if (savings !== null) {
@@ -344,32 +403,6 @@ function renderAnalyse() {
     savEl.textContent = '—';
     savEl.style.color = '';
   }
-
-  // Kategorie-Aufschlüsselung
-  const cats = {};
-  entries.forEach(e => {
-    cats[e.category] = (cats[e.category] || 0) + Number(e.price);
-  });
-  const catEl = document.getElementById('analyseCats');
-  catEl.innerHTML = '';
-  if (Object.keys(cats).length === 0) return;
-
-  const maxAmt = Math.max(...Object.values(cats));
-  Object.entries(cats)
-    .sort((a, b) => b[1] - a[1])
-    .forEach(([name, amt]) => {
-      const row = document.createElement('div');
-      row.className = 'analyse-cat-row';
-      const pct = maxAmt > 0 ? (amt / maxAmt) * 100 : 0;
-      row.innerHTML = `
-        <span class="analyse-cat-name">${escapeHtml(name)}</span>
-        <div class="analyse-cat-bar-bg">
-          <div class="analyse-cat-bar-fill" style="width:${pct.toFixed(1)}%"></div>
-        </div>
-        <span class="analyse-cat-amt">${fmtEur(amt)}</span>
-      `;
-      catEl.appendChild(row);
-    });
 }
 
 document.getElementById('prevMonthAnalyseBtn').addEventListener('click', () => {
@@ -391,7 +424,7 @@ const exportToEl       = document.getElementById('exportTo');
 const exportFilenameEl = document.getElementById('exportFilename');
 const exportCountEl    = document.getElementById('exportCount');
 
-const CATS = ['Basis', 'Extra', 'Luxus'];
+const CATS = ['Muss', 'Soll', 'Kann'];
 
 function q(s) {
   const str = String(s == null ? '' : s);
@@ -416,7 +449,7 @@ function buildCSVFlat(entries, monthKeys) {
 
   monthKeys.forEach(mk => {
     getFixedCostsForMonthExport(mk).forEach(f => {
-      const cat = f.category || 'Basis';
+      const cat = f.category || 'Muss';
       const note = 'gueltig ab ' + (f.validFrom || 'immer') + (f.endMonth ? ' bis ' + f.endMonth : '');
       lines.push([
         mk + '-01',
@@ -449,7 +482,7 @@ function buildCSVMonthly(entries, monthKeys) {
 
     const fixByCat = {};
     CATS.forEach(c => { fixByCat[c] = 0; });
-    fixItems.forEach(f => { const c = f.category || 'Basis'; fixByCat[c] = (fixByCat[c] || 0) + Number(f.amount); });
+    fixItems.forEach(f => { const c = f.category || 'Muss'; fixByCat[c] = (fixByCat[c] || 0) + Number(f.amount); });
 
     const varTotal   = CATS.reduce((s, c) => s + varByCat[c], 0);
     const totalOut   = fixTotal + varTotal;
@@ -685,7 +718,7 @@ function renderFixedList() {
 
       li.innerHTML =
         '<span class="fixed-name">' + escapeHtml(f.name) + ' ' + badge + '</span>' +
-        '<span class="fixed-cat cat-badge-' + (f.category || 'Basis').toLowerCase() + '">' + (f.category || 'Basis') + '</span>' +
+        '<span class="fixed-cat cat-badge-' + (f.category || 'Muss').toLowerCase() + '">' + (f.category || 'Muss') + '</span>' +
         '<span class="fixed-from">ab ' + (f.validFrom || '–') + '</span>' +
         '<span class="fixed-amt">' + fmtEur(f.amount) + '</span>' +
         '<span class="fixed-actions">' + buttons + '</span>';
@@ -733,7 +766,7 @@ document.getElementById('fixedAddBtn').addEventListener('click', () => {
   const name      = document.getElementById('fixedName').value.trim();
   const amount    = parseFloat(document.getElementById('fixedAmount').value);
   const rawFrom   = document.getElementById('fixedValidFrom').value.trim();
-  const category  = document.getElementById('fixedCategory').value || 'Basis';
+  const category  = document.getElementById('fixedCategory').value || 'Muss';
 
   if (!name) { alert('Bitte eine Bezeichnung eingeben.'); return; }
   if (!Number.isFinite(amount) || amount <= 0) { alert('Bitte einen gültigen Betrag eingeben.'); return; }
@@ -755,9 +788,9 @@ document.getElementById('fixedAddBtn').addEventListener('click', () => {
   document.getElementById('fixedName').value      = '';
   document.getElementById('fixedAmount').value    = '';
   document.getElementById('fixedValidFrom').value = '';
-  // Reset category buttons to Basis
+  // Reset category buttons to Muss
   document.querySelectorAll('.fixed-cat-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
-  document.getElementById('fixedCategory').value = 'Basis';
+  document.getElementById('fixedCategory').value = 'Muss';
   renderFixedList();
   renderMonthSummary();
 });
@@ -788,7 +821,7 @@ document.querySelectorAll('.fixed-cat-btn').forEach(btn => {
 
 document.getElementById('saveBtn').addEventListener('click', () => {
   const price    = parseFloat(document.getElementById('price').value);
-  const category = catEl.value || 'Basis';
+  const category = catEl.value || 'Muss';
   const remarks  = document.getElementById('remarks').value.trim();
 
   if (!Number.isFinite(price) || price === 0) {
@@ -809,7 +842,7 @@ document.getElementById('saveBtn').addEventListener('click', () => {
   document.getElementById('price').value   = '';
   document.getElementById('remarks').value = '';
   document.querySelectorAll('.cat-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
-  catEl.value = 'Basis';
+  catEl.value = 'Muss';
 
   renderMonthSummary();
 });

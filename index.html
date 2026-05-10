@@ -71,11 +71,11 @@
 
         <div class="cat-label">Kategorie</div>
         <div class="cat-buttons" id="categoryButtons">
-          <button type="button" class="cat-btn cat-rot active" data-value="Basis">Basis</button>
-          <button type="button" class="cat-btn cat-gelb" data-value="Extra">Extra</button>
-          <button type="button" class="cat-btn cat-gruen" data-value="Luxus">Luxus</button>
+          <button type="button" class="cat-btn cat-rot active" data-value="Muss">Muss</button>
+          <button type="button" class="cat-btn cat-gelb" data-value="Soll">Soll</button>
+          <button type="button" class="cat-btn cat-gruen" data-value="Kann">Kann</button>
         </div>
-        <input type="hidden" id="category" value="Basis" />
+        <input type="hidden" id="category" value="Muss" />
 
         <div class="cat-label">Anmerkung <span class="optional">(optional)</span></div>
         <textarea id="remarks" rows="2" placeholder="z.B. Supermarkt – Wocheneinkauf"></textarea>
@@ -103,21 +103,26 @@
           <button id="nextMonthAnalyseBtn" class="icon-btn">&#8250;</button>
         </div>
 
-        <div class="analyse-block">
+        <!-- Donut-Diagramm -->
+        <div class="donut-wrap">
+          <div style="position:relative;width:160px;height:160px;flex-shrink:0">
+            <canvas id="donutChart" width="160" height="160"
+              role="img" aria-label="Kreisdiagramm der Ausgaben nach Kategorie">Ausgaben-Kreisdiagramm</canvas>
+            <div class="donut-centre">
+              <div class="donut-centre-label">Gesamt</div>
+              <div class="donut-centre-val" id="donutTotal">—</div>
+            </div>
+          </div>
+          <div class="donut-legend" id="donutLegend"></div>
+        </div>
+
+        <div class="analyse-block" style="margin-top:12px">
           <div class="analyse-row">
             <span class="analyse-key">Einnahmen</span>
             <span class="analyse-val green" id="aIncome">—</span>
           </div>
           <div class="analyse-row">
-            <span class="analyse-key">Fixkosten</span>
-            <span class="analyse-val" id="aFixed">—</span>
-          </div>
-          <div class="analyse-row">
-            <span class="analyse-key">Variable Ausgaben</span>
-            <span class="analyse-val" id="aVariable">—</span>
-          </div>
-          <div class="analyse-row analyse-total">
-            <span class="analyse-key">Gesamt Ausgaben</span>
+            <span class="analyse-key">Ausgaben gesamt</span>
             <span class="analyse-val" id="aTotal">—</span>
           </div>
           <div class="analyse-row analyse-total">
@@ -125,8 +130,6 @@
             <span class="analyse-val" id="aSavings">—</span>
           </div>
         </div>
-
-        <div class="analyse-cats" id="analyseCats"></div>
       </div>
 
       <div class="card" style="margin-top:12px">
@@ -200,11 +203,11 @@
           <input type="text" id="fixedValidFrom" placeholder="Gültig ab (JJJJ-MM)" maxlength="7" />
           <div class="cat-label" style="margin-top:6px">Kategorie</div>
           <div class="cat-buttons" style="gap:6px">
-            <button type="button" class="cat-btn fixed-cat-btn cat-rot active" data-value="Basis">Basis</button>
-            <button type="button" class="cat-btn fixed-cat-btn cat-gelb" data-value="Extra">Extra</button>
-            <button type="button" class="cat-btn fixed-cat-btn cat-gruen" data-value="Luxus">Luxus</button>
+            <button type="button" class="cat-btn fixed-cat-btn cat-rot active" data-value="Muss">Muss</button>
+            <button type="button" class="cat-btn fixed-cat-btn cat-gelb" data-value="Soll">Soll</button>
+            <button type="button" class="cat-btn fixed-cat-btn cat-gruen" data-value="Kann">Kann</button>
           </div>
-          <input type="hidden" id="fixedCategory" value="Basis" />
+          <input type="hidden" id="fixedCategory" value="Muss" />
           <button id="fixedAddBtn" class="btn-primary">Fixkosten hinzufügen</button>
         </div>
         <p class="hint-text" style="margin-top:4px">„Gültig ab" im Format JJJJ-MM, z.B. 2026-05. Leer lassen = ab sofort.</p>
@@ -243,6 +246,7 @@
     </button>
   </nav>
 
+  <script src="chart.umd.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

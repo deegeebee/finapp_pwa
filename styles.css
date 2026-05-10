@@ -248,12 +248,12 @@ button { cursor: pointer; font-family: inherit; }
   display: flex; flex-direction: column; align-items: center; gap: 4px;
   transition: background 0.15s, border-color 0.15s;
 }
-.cat-rot   { border: 3px solid #1e8449; color: #1e8449; }
-.cat-gelb  { border: 3px solid #c49a00; color: #c49a00; }
-.cat-gruen { border: 3px solid #c0392b; color: #c0392b; }
-.cat-rot.active   { background: rgba(30,132,73,0.12); }
-.cat-gelb.active  { background: rgba(196,154,0,0.12); }
-.cat-gruen.active { background: rgba(192,57,43,0.12); }
+.cat-rot   { border: 3px solid #3B6D11; color: #3B6D11; }
+.cat-gelb  { border: 3px solid #854F0B; color: #854F0B; }
+.cat-gruen { border: 3px solid #993C1D; color: #993C1D; }
+.cat-rot.active   { background: rgba(59,109,17,0.12); }
+.cat-gelb.active  { background: rgba(133,79,11,0.12); }
+.cat-gruen.active { background: rgba(153,60,29,0.12); }
 
 /* ── Month nav (Einträge & Analyse) ──────────────────────────────────────── */
 .month-nav {
@@ -304,7 +304,67 @@ button { cursor: pointer; font-family: inherit; }
 .entry-remark { font-size: 0.8rem; color: #777; margin-top: 2px; }
 .entry-empty  { font-size: 0.9rem; color: #888; text-align: center; padding: 24px 0; }
 
-/* ── Analyse ──────────────────────────────────────────────────────────────── */
+/* ── Analyse: Donut chart ─────────────────────────────────────────────────── */
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.donut-centre {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.donut-centre-label {
+  font-size: 0.72rem;
+  color: #888;
+  margin-bottom: 2px;
+}
+.donut-centre-val {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #111;
+}
+.donut-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.donut-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+}
+.donut-leg-sq {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.donut-leg-name {
+  flex: 1;
+  color: #555;
+}
+.donut-leg-amt {
+  font-weight: 500;
+  color: #111;
+}
+
+/* dark mode donut */
+body.dark .donut-centre-label,
+body:not(.light) .donut-centre-label { color: #888; }
+body.dark .donut-centre-val,
+body:not(.light) .donut-centre-val { color: #f0f0f0; }
+body.dark .donut-leg-name,
+body:not(.light) .donut-leg-name { color: #aaa; }
+body.dark .donut-leg-amt,
+body:not(.light) .donut-leg-amt { color: #f0f0f0; }
 .analyse-block { margin-bottom: 12px; }
 .analyse-row {
   display: flex;
@@ -398,15 +458,15 @@ button { cursor: pointer; font-family: inherit; }
   white-space: nowrap;
   flex-shrink: 0;
 }
-.cat-badge-basis  { background: rgba(30,132,73,0.12);  color: #1e8449; }
-.cat-badge-extra  { background: rgba(196,154,0,0.12);  color: #c49a00; }
-.cat-badge-luxus  { background: rgba(192,57,43,0.12);  color: #c0392b; }
-body.dark .cat-badge-basis,
-body:not(.light) .cat-badge-basis { background: rgba(39,174,96,0.25);  color: #27ae60; }
-body.dark .cat-badge-extra,
-body:not(.light) .cat-badge-extra { background: rgba(212,160,23,0.25); color: #d4a017; }
-body.dark .cat-badge-luxus,
-body:not(.light) .cat-badge-luxus { background: rgba(224,84,68,0.25);  color: #e05444; }
+.cat-badge-muss  { background: rgba(59,109,17,0.12);  color: #3B6D11; }
+.cat-badge-soll  { background: rgba(133,79,11,0.12);  color: #854F0B; }
+.cat-badge-kann  { background: rgba(153,60,29,0.12);  color: #993C1D; }
+body.dark .cat-badge-muss,
+body:not(.light) .cat-badge-muss { background: rgba(99,153,34,0.25);  color: #97C459; }
+body.dark .cat-badge-soll,
+body:not(.light) .cat-badge-soll { background: rgba(212,160,23,0.25); color: #d4a017; }
+body.dark .cat-badge-kann,
+body:not(.light) .cat-badge-kann { background: rgba(216,90,48,0.25);  color: #F0997B; }
 
 /* dark mode badges */
 body.dark .fixed-badge.cancelled,
@@ -511,12 +571,12 @@ body.dark .analyse-cat-row { border-color: #2a2a2a; }
 body.dark .analyse-cat-name { color: #ccc; }
 body.dark .analyse-cat-bar-bg { background: #333; }
 body.dark .fixed-list li { border-color: #2a2a2a; }
-body.dark .cat-rot   { border-color: #27ae60; color: #27ae60; }
-body.dark .cat-gelb  { border-color: #d4a017; color: #d4a017; }
-body.dark .cat-gruen { border-color: #e05444; color: #e05444; }
-body.dark .cat-rot.active   { background: rgba(39,174,96,0.30); }
-body.dark .cat-gelb.active  { background: rgba(212,160,23,0.30); }
-body.dark .cat-gruen.active { background: rgba(224,84,68,0.30); }
+body.dark .cat-rot   { border-color: #639922; color: #639922; }
+body.dark .cat-gelb  { border-color: #EF9F27; color: #EF9F27; }
+body.dark .cat-gruen { border-color: #D85A30; color: #D85A30; }
+body.dark .cat-rot.active   { background: rgba(99,153,34,0.28); }
+body.dark .cat-gelb.active  { background: rgba(239,159,39,0.25); }
+body.dark .cat-gruen.active { background: rgba(216,90,48,0.28); }
 
 /* ── Auto dark (system preference) ───────────────────────────────────────── */
 @media (prefers-color-scheme: dark) {
@@ -545,10 +605,10 @@ body.dark .cat-gruen.active { background: rgba(224,84,68,0.30); }
   body:not(.light) .analyse-cat-name { color: #ccc; }
   body:not(.light) .analyse-cat-bar-bg { background: #333; }
   body:not(.light) .fixed-list li { border-color: #2a2a2a; }
-  body:not(.light) .cat-rot   { border-color: #27ae60; color: #27ae60; }
-  body:not(.light) .cat-gelb  { border-color: #d4a017; color: #d4a017; }
-  body:not(.light) .cat-gruen { border-color: #e05444; color: #e05444; }
-  body:not(.light) .cat-rot.active   { background: rgba(39,174,96,0.30); }
-  body:not(.light) .cat-gelb.active  { background: rgba(212,160,23,0.30); }
-  body:not(.light) .cat-gruen.active { background: rgba(224,84,68,0.30); }
+  body:not(.light) .cat-rot   { border-color: #639922; color: #639922; }
+  body:not(.light) .cat-gelb  { border-color: #EF9F27; color: #EF9F27; }
+  body:not(.light) .cat-gruen { border-color: #D85A30; color: #D85A30; }
+  body:not(.light) .cat-rot.active   { background: rgba(99,153,34,0.28); }
+  body:not(.light) .cat-gelb.active  { background: rgba(239,159,39,0.25); }
+  body:not(.light) .cat-gruen.active { background: rgba(216,90,48,0.28); }
 }
